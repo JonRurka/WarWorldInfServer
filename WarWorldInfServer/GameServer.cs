@@ -7,7 +7,9 @@ namespace WarWorldInfServer
 	public class GameServer
 	{
 		private readonly string[] _commandArgs;
+		private readonly string _directory;
 		private static GameServer _instance;
+
 
 		private Thread _tickThread;
 		private bool _running;
@@ -21,6 +23,7 @@ namespace WarWorldInfServer
 		public static GameServer Instance{ get { return _instance; } }
 
 		public string[] CommandArgs{ get { return _commandArgs; } }
+		public string AppDirectory { get { return _directory; } }
 		public bool Running { get { return _running; } }
 		public bool WorldLoaded { get { return _worldLoaded; } }
 		public CommandExecuter CommandExec{ get { return _commandExec; } }
@@ -30,6 +33,7 @@ namespace WarWorldInfServer
 		public GameServer (string[] args)
 		{
 			_commandArgs = args;
+			_directory = Directory.GetCurrentDirectory () + "/";
 			_running = true;
 			_instance = this;
 		}
@@ -62,6 +66,13 @@ namespace WarWorldInfServer
 			_gameTimer = new GameTimer (world.WorldStartTime);
 			_worldLoaded = true;
 			Logger.Log ("World \"{0}\" started.", world.WorldName);
+		}
+
+		public void Exit(){
+			_running = false;
+			if (_worldLoaded)
+				_worldLoaded = false;
+
 		}
 	}
 }

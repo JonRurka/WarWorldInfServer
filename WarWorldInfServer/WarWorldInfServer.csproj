@@ -109,6 +109,29 @@
     <Compile Include="World.cs" />
     <Compile Include="FileManager.cs" />
     <Compile Include="SaveVersions.cs" />
+    <Compile Include="IniFileParser\FileIniParser.cs" />
+    <Compile Include="IniFileParser\StreamIniDataParser.cs" />
+    <Compile Include="IniFileParser\StringIniParser.cs" />
+    <Compile Include="IniFileParser\Exceptions\ParsingException.cs" />
+    <Compile Include="IniFileParser\Helpers\Assert.cs" />
+    <Compile Include="IniFileParser\Model\IniData.cs" />
+    <Compile Include="IniFileParser\Model\KeyData.cs" />
+    <Compile Include="IniFileParser\Model\KeyDataCollection.cs" />
+    <Compile Include="IniFileParser\Model\SectionData.cs" />
+    <Compile Include="IniFileParser\Model\SectionDataCollection.cs" />
+    <Compile Include="IniFileParser\Model\Configuration\BaseIniParserConfiguration.cs" />
+    <Compile Include="IniFileParser\Model\Configuration\DefaultIniParserConfiguration.cs" />
+    <Compile Include="IniFileParser\Model\Configuration\IIniParserConfiguration.cs" />
+    <Compile Include="IniFileParser\Model\Formatting\DefaultIniDataFormatter.cs" />
+    <Compile Include="IniFileParser\Model\Formatting\IIniDataFormatter.cs" />
+    <Compile Include="IniFileParser\Parser\IniDataParser.cs" />
+    <Compile Include="ConfigParser.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <Folder Include="IniFileParser\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="IniFileParser\Model\IniData.cs.rej" />
+  </ItemGroup>
 </Project>

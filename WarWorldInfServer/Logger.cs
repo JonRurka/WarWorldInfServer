@@ -43,34 +43,37 @@ namespace WarWorldInfServer
 		private static List<string> _messages = new List<string>();
 		private static List<string> _currentmessages = new List<string>();
 
+		public static void Clear(){
+			_currentmessages.Clear ();
+			InputStr = string.Empty;
+		}
+
 		public static void Update(){
-			//_currentActions.Clear ();
 			if (_messages.Count > 0 || _letterTyped) {
-				_currentmessages.AddRange (_messages);
-				_messages.Clear ();
-				if (_currentmessages.Count > 0) {
-					Console.Clear ();
-					for (int i = 0; i < _currentmessages.Count; i++) {
-						Console.WriteLine (_currentmessages [i]);
-					}
-					Console.Write("> {0}", InputStr);
-					_letterTyped = false;
-				}
+				Draw();
 			}
 		}
 
 		public static void LogToFile(object message){
 			if (!Directory.Exists (Directory.GetCurrentDirectory () + "/SystemLogs/"))
 				Directory.CreateDirectory (Directory.GetCurrentDirectory () + "/SystemLogs/");
-			//Console.WriteLine (Directory.GetCurrentDirectory () + "/Logs/");
 
 			if (_logFile == string.Empty) 
 				_logFile = Directory.GetCurrentDirectory() + "/SystemLogs/" + GameTimer.GetDateTime().Replace("/","-") + ".txt";
-			//Console.WriteLine (_logFile);
-			//FileStream stream = File.Open(LogFile, FileMode.OpenOrCreate, FileAccess.Write);
 			StreamWriter writer = new StreamWriter (_logFile, true);
 			writer.WriteLine(message.ToString());
 			writer.Close ();
+		}
+
+		private static void Draw(){
+			_currentmessages.AddRange (_messages);
+			_messages.Clear ();
+			Console.Clear ();
+			for (int i = 0; i < _currentmessages.Count; i++) {
+				Console.WriteLine (_currentmessages [i]);
+			}
+			Console.Write("> {0}", InputStr);
+			_letterTyped = false;
 		}
 	}
 }
