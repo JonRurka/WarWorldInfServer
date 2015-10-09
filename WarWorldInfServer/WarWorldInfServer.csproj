@@ -126,6 +126,7 @@
     <Compile Include="IniFileParser\Model\Formatting\IIniDataFormatter.cs" />
     <Compile Include="IniFileParser\Parser\IniDataParser.cs" />
     <Compile Include="ConfigParser.cs" />
+    <Compile Include="SettingsLoader.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

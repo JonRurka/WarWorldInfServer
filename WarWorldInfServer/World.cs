@@ -67,7 +67,7 @@ namespace WarWorldInfServer
 			_worldName = worldName;
 			WorldConfigSave worldSave = new WorldConfigSave ();
 			_time = new Time (0, 0, 0, 0, 0, 0, 3600);
-			worldSave.version = GameServer.Version;
+			worldSave.version = GameServer.Instance.Version;
 			worldSave.time = _time;
 			FileManager.SaveConfigFile(_worldDirectory + "WorldSave.json", worldSave);
 
@@ -108,7 +108,7 @@ namespace WarWorldInfServer
 
 			WorldConfigSave worldSave = new WorldConfigSave ();
 			GameTimer timer = GameServer.Instance.GameTime;
-			worldSave.version = GameServer.Version;
+			worldSave.version = GameServer.Instance.Version;
 			worldSave.time = new Time (timer.Seconds, timer.Minutes, timer.Hours, timer.Days, timer.Tick, timer.SecondsInTick, timer.MaxSecondsInTick );
 			FileManager.SaveConfigFile (_worldDirectory + "WorldSave.json", worldSave);
 
