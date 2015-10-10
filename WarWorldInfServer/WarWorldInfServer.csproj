@@ -44,6 +44,7 @@
     <Reference Include="Newtonsoft.Json">
       <HintPath>lib\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Main.cs" />
@@ -127,6 +128,12 @@
     <Compile Include="IniFileParser\Parser\IniDataParser.cs" />
     <Compile Include="ConfigParser.cs" />
     <Compile Include="SettingsLoader.cs" />
+    <Compile Include="TaskQueue.cs" />
+    <Compile Include="AsyncTask.cs" />
+    <Compile Include="NetListener.cs" />
+    <Compile Include="NetServer.cs" />
+    <Compile Include="UserManager.cs" />
+    <Compile Include="User.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

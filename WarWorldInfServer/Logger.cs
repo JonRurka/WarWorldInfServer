@@ -23,9 +23,10 @@ namespace WarWorldInfServer
 
 		public static void Print(object message, params object[] args){
 			lock (_messages) {
-				_messages.Add(string.Format(message.ToString(), args));
+				_messages.Add (string.Format (message.ToString (), args));
 			}
-			LogToFile (string.Format(message.ToString(), args));
+			TaskQueue.QueueMain(()=>LogToFile (string.Format(message.ToString(), args)));
+
 		}
 
 		public static void Log(object message, params string[] args){

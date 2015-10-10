@@ -8,6 +8,7 @@ namespace WarWorldInfServer
 		{
 			public string version;
 			public Time time;
+			public TerrainSettings terrain;
 		}
 
 		public struct Time
@@ -40,6 +41,21 @@ namespace WarWorldInfServer
 				this.maxSecondsInTicks = time.maxSecondsInTicks;
 			}
 		}
+		public struct TerrainSettings
+		{
+			public int width;
+			public int height;
+			public int seed;
+			public string imageFile;
+
+			public TerrainSettings(int width, int height, int seed, string imageFile){
+				this.width = width;
+				this.height = height;
+				this.seed = seed;
+				this.imageFile = imageFile;
+			}
+		}
+
 
 		private string _worldName;
 		private string _worldDirectory;
@@ -65,13 +81,15 @@ namespace WarWorldInfServer
 
 			//TODO: create config and save files.
 			_worldName = worldName;
+			SettingsLoader settings = GameServer.Instance.Settings;
 			WorldConfigSave worldSave = new WorldConfigSave ();
 			_time = new Time (0, 0, 0, 0, 0, 0, 3600);
 			worldSave.version = GameServer.Instance.Version;
 			worldSave.time = _time;
+			worldSave.terrain = new TerrainSettings (settings.Standard.TerrainWidth, settings.Standard.TerrainHeight, settings.Standard.TerrainSeed, settings.Standard.TerrainImageFile);
 			FileManager.SaveConfigFile(_worldDirectory + "WorldSave.json", worldSave);
 
-			_terrain = new TerrainBuilder (1920, 1080, 0);
+			_terrain = new TerrainBuilder (worldSave.terrain.width, worldSave.terrain.height, worldSave.terrain.height);
 			_terrain.Generate (LibNoise.GradientPresets.Terrain);
 			_terrain.Save(_worldDirectory + "Map.bmp");
 

@@ -3,6 +3,8 @@ using System.IO;
 using System.Text;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Windows.Forms;
+using System.Threading;
 
 namespace WarWorldInfServer
 {
@@ -90,7 +92,8 @@ namespace WarWorldInfServer
 				else if (key.Key == ConsoleKey.Enter){
 					string tmpStr = _input;
 					_input = string.Empty;
-					ExecuteCommand(tmpStr);
+					TaskQueue.QueueMain(()=>ExecuteCommand(tmpStr));
+					//ExecuteCommand(tmpStr);
 				}
 				else{
 					_input += key.KeyChar;
@@ -206,6 +209,35 @@ namespace WarWorldInfServer
 				Logger.LogError("To many arguments.");
 			}
 			return output.ToString();
+		}
+
+		private object preview_CMD(params string[] args){
+			SettingsLoader settings = GameServer.Instance.Settings;
+			int seed = 0;
+			if (args.Length == 1)
+				seed = settings.Standard.TerrainSeed;
+			else if (args.Length == 2 && args [1].Equals ("-r")) {
+				seed = new Random (GameTimer.GetEpoch ()).Next (int.MinValue, int.MaxValue);
+			} else if (args.Length == 2) {
+				if (int.TryParse(args[1], out seed));
+			}
+			Thread thread = new Thread(()=>{
+				TerrainBuilder builder = new TerrainBuilder(settings.Standard.TerrainWidth, settings.Standard.TerrainHeight, seed);
+				builder.Generate (LibNoise.GradientPresets.Terrain);
+				System.Drawing.Bitmap map = builder.GetBitmap();
+				Form imageForm = new Form ();
+				imageForm.Text = "Seed preview: " + seed;
+				imageForm.Width = settings.Standard.TerrainWidth;
+				imageForm.Height = settings.Standard.TerrainHeight;
+				imageForm.FormBorderStyle = FormBorderStyle.Sizable;
+				imageForm.Controls.Add (new PictureBox () {Image = map, Dock = DockStyle.Fill});
+				imageForm.ShowDialog();
+				Logger.Log("Preview closed.");
+				imageForm.Close();
+				imageForm.Dispose();
+			});
+			thread.Start ();
+			return "Seed: " + seed;
 		}
 	}
 }

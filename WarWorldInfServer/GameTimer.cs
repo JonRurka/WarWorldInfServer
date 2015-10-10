@@ -72,6 +72,10 @@ namespace WarWorldInfServer
 			return time.ToString ();
 		}
 
+		public static int GetEpoch(){
+			return (int)(DateTime.UtcNow - new DateTime (1970, 1, 1)).TotalMilliseconds;
+		}
+
 		public string GetRuntime ()
 		{
 			return string.Format ("RunTime: {0:00}:{1:00}:{2:00}:{3:00}", Days, Hours, Minutes, Seconds);

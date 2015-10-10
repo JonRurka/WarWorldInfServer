@@ -35,10 +35,9 @@ namespace WarWorldInfServer
 		}
 
 		public void Generate(Gradient preset){
-			int epoch = (int)(DateTime.UtcNow - new DateTime (1970, 1, 1)).TotalSeconds;
 			_noiseModule = new Perlin ();
 			((Perlin)_noiseModule).OctaveCount = 16;
-			((Perlin)_noiseModule).Seed = epoch;
+			((Perlin)_noiseModule).Seed = _seed;
 			_noiseMap = new Noise2D (_width, _height, _noiseModule);
 			_noiseMap.GeneratePlanar (0, 4, 0, 2);
 			Logger.Log ("terrain generated.");
@@ -77,6 +76,20 @@ namespace WarWorldInfServer
 			return _map [x + y * _width];
 		}
 
+		public Bitmap GetBitmap(){
+			return GetBitmap (_map);
+		}
+
+		public Bitmap GetBitmap(Color[] colors){
+			Bitmap map = new Bitmap (_width, _height);
+			for (int x = 0; x < _width; x++) {
+				for (int y = 0; y < _height; y++) {
+					map.SetPixel(x, y, colors[x + y * _width]);
+				}
+			}
+			return map;
+		}
+
 		private string GetColorString(Color[] colors){
 			string colorStr = string.Empty;
 			for (int i = 0; i < _map.Length; i++) {
@@ -110,13 +123,7 @@ namespace WarWorldInfServer
 		}
 		
 		private void SaveBmp(Color[] colors, string file){
-			Bitmap map = new Bitmap (_width, _height);
-			for (int x = 0; x < _width; x++) {
-				for (int y = 0; y < _height; y++) {
-					map.SetPixel(x, y, colors[x + y * _width]);
-				}
-			}
-
+			Bitmap map = GetBitmap (colors);
 			map.Save(file);
 			map.Dispose();
 		}
