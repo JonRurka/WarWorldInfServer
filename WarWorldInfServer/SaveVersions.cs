@@ -45,7 +45,11 @@ namespace WarWorldInfServer
 				}
 			}
 			
-			
+			public struct User{
+				public string name;
+				public WarWorldInfServer.User.PermissionLevel permission;
+				public string passwordHash;
+			}
 		}
 	}
 }

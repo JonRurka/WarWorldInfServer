@@ -130,10 +130,12 @@
     <Compile Include="SettingsLoader.cs" />
     <Compile Include="TaskQueue.cs" />
     <Compile Include="AsyncTask.cs" />
-    <Compile Include="NetListener.cs" />
     <Compile Include="NetServer.cs" />
     <Compile Include="UserManager.cs" />
     <Compile Include="User.cs" />
+    <Compile Include="Libnoise\CommandDescription.cs" />
+    <Compile Include="SerializationStructs.cs" />
+    <Compile Include="SessionKeyGenerator.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

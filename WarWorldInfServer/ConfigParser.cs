@@ -9,8 +9,8 @@ using IniParser.Model;
 namespace WarWorldInfServer
 {
 	public static class ConfigParser {
-		public static CommandExecuter.CommandDescription[] GetCommands(string file) {
-			List<CommandExecuter.CommandDescription> commands = new List<CommandExecuter.CommandDescription>();
+		public static CommandDescription[] GetCommands(string file) {
+			List<CommandDescription> commands = new List<CommandDescription>();
 			FileIniDataParser parser = new FileIniDataParser();
 			parser.Parser.Configuration.CommentString = "#";
 			if (File.Exists (file)) {
@@ -42,7 +42,7 @@ namespace WarWorldInfServer
 						Logger.LogError ("Failed to parse Command \"" + command + "\": Function not specified.");
 					}
 				
-					commands.Add (new CommandExecuter.CommandDescription (command, command_args, description_small, description_Long, callback));
+					commands.Add (new CommandDescription (command, command_args, description_small, description_Long, callback));
 				}
 			} else
 				Logger.LogError("Command file not found.");

@@ -11,7 +11,7 @@ namespace WarWorldInfServer
 			SaveString (file, jsonStr);
 		}
 
-		public static object LoadObject<T>(string file){
+		public static T LoadObject<T>(string file){
 			string contents =  LoadString(file);
 			return JsonConvert.DeserializeObject<T> (contents);
 		}

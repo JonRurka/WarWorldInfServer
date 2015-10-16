@@ -83,15 +83,17 @@ namespace WarWorldInfServer
 			_worldName = worldName;
 			SettingsLoader settings = GameServer.Instance.Settings;
 			WorldConfigSave worldSave = new WorldConfigSave ();
-			_time = new Time (0, 0, 0, 0, 0, 0, 3600);
+			_time = new Time (0, 0, 0, 0, 0, 0, settings.SecondsInTicks);
 			worldSave.version = GameServer.Instance.Version;
 			worldSave.time = _time;
-			worldSave.terrain = new TerrainSettings (settings.Standard.TerrainWidth, settings.Standard.TerrainHeight, settings.Standard.TerrainSeed, settings.Standard.TerrainImageFile);
+			worldSave.terrain = new TerrainSettings (settings.TerrainWidth, settings.TerrainHeight, settings.TerrainSeed, settings.TerrainImageFile);
 			FileManager.SaveConfigFile(_worldDirectory + "WorldSave.json", worldSave);
 
 			_terrain = new TerrainBuilder (worldSave.terrain.width, worldSave.terrain.height, worldSave.terrain.height);
 			_terrain.Generate (LibNoise.GradientPresets.Terrain);
 			_terrain.Save(_worldDirectory + "Map.bmp");
+
+			GameServer.Instance.Users.Save (_worldDirectory + "Users/");
 
 			Logger.Log ("World \"{0}\" created.", worldName);
 			GameServer.Instance.StartWorld (this);
@@ -108,6 +110,7 @@ namespace WarWorldInfServer
 				WorldConfigSave worldSave = (WorldConfigSave)FileManager.LoadObject<WorldConfigSave>(_worldDirectory + "WorldSave.json");
 				_time = worldSave.time;
 				_terrain = new TerrainBuilder(_worldDirectory + "Map.bmp");
+				GameServer.Instance.Users.LoadUsers(_worldDirectory + "Users/");
 
 				Logger.Log("World \"{0}\" loaded.", worldName);
 				GameServer.Instance.StartWorld(this);
@@ -131,6 +134,7 @@ namespace WarWorldInfServer
 			FileManager.SaveConfigFile (_worldDirectory + "WorldSave.json", worldSave);
 
 			_terrain.Save (_worldDirectory + "Map.bmp");
+			GameServer.Instance.Users.Save (_worldDirectory + "Users/");
 			
 			Logger.Log ("World \"{0}\" saved.", worldName);
 		}

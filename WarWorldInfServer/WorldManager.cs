@@ -33,7 +33,7 @@ namespace WarWorldInfServer
 				//Logger.Log(folderName);
 			}
 
-			Logger.Log ("World Manager initialized.");
+			//Logger.Log ("World Manager initialized.");
 		}
 
 		public World LoadWorld(string worldName){

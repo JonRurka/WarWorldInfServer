@@ -1,6 +1,8 @@
 using System;
 using System.IO;
 using System.Threading;
+using System.Net;
+using Newtonsoft.Json;
 
 namespace WarWorldInfServer
 {
@@ -24,6 +26,8 @@ namespace WarWorldInfServer
 		public GameTimer GameTime{ get; private set; }
 		public WorldManager WorldMnger { get; private set; }
 		public SettingsLoader Settings { get; private set; }
+		public UserManager Users { get; private set; }
+		public NetServer Net { get; private set; }
 
 		public GameServer (string[] args)
 		{
@@ -35,12 +39,13 @@ namespace WarWorldInfServer
 		}
 
 		public void Run(){
-
 			Settings = new SettingsLoader (_directory + "Settings.ini");
 			_taskQueue = new TaskQueue ();
 			Logger.Log ("War World Infinity Server Version {0}", Version);
-			WorldMnger = new WorldManager (this);
 			CommandExec = new CommandExecuter ();
+			Net = new NetServer (Settings.ServerPort, Settings.ClientPort);
+			AddNetworkCommands ();
+			WorldMnger = new WorldManager (this);
 			_tickThread = new Thread (CommandExec.StartCommandLoop);
 			_tickThread.Start ();
 			GameLoop ();
@@ -63,6 +68,7 @@ namespace WarWorldInfServer
 
 		public void StartWorld(World world){
 			GameTime = new GameTimer (world.WorldStartTime);
+			Users = new UserManager ();
 			WorldLoaded = true;
 			Logger.Log ("World \"{0}\" started.", world.WorldName);
 		}
@@ -71,7 +77,44 @@ namespace WarWorldInfServer
 			Running = false;
 			if (WorldLoaded)
 				WorldLoaded = false;
+		}
 
+		private void AddNetworkCommands(){
+			Net.AddCommand ("ping", Ping_CMD);
+			Net.AddCommand ("login", Login_CMD);
+		}
+
+		private void Ping_CMD(IPEndPoint endPoint, string args){
+			//Logger.Log ("Received ping from " + endPoint.Address.ToString ());
+			Net.Send (endPoint.Address.ToString (), Net.ClientPort, "pingsuccess#");
+		}
+
+		private void Login_CMD(IPEndPoint endPoint, string args){
+			SerializationStructs.Login loginData = JsonConvert.DeserializeObject<SerializationStructs.Login> (args);
+			SerializationStructs.LoginResponse.ResponseType responseType = SerializationStructs.LoginResponse.ResponseType.Failed;
+			User.PermissionLevel permission = User.PermissionLevel.None;
+			string sessionKey = string.Empty;
+			string message = string.Empty;
+			if (WorldLoaded) {
+				if (Users.UserExists(loginData.name)){
+					User user = Users.GetUser (loginData.name);
+					bool loggedIn = user.Login (endPoint.Address.ToString ());
+					responseType = loggedIn ? SerializationStructs.LoginResponse.ResponseType.Successfull : SerializationStructs.LoginResponse.ResponseType.Failed;
+					permission = loggedIn ? user.Permission : User.PermissionLevel.None;
+					sessionKey = user.SessionKey;
+					message = user.LoginMessage;
+					Logger.Log("User {0} logged in from {1}", loginData.name, endPoint.Address.ToString());
+				}
+				else{
+					message = "User not found!";
+				}
+			} else {
+				message = "No world instance loaded!";
+				//Logger.LogWarning("User {0} tried to log in with no world loaded!", loginData.name);
+			}
+
+			SerializationStructs.LoginResponse response = new SerializationStructs.LoginResponse (responseType, permission, sessionKey, message);
+			Net.Send(endPoint.Address.ToString(), Net.ClientPort, "loginresponse#" + JsonConvert.SerializeObject(response));
 		}
 	}
 }

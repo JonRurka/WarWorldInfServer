@@ -12,61 +12,6 @@ namespace WarWorldInfServer
 	{
 		public delegate object CommandFunction(params string[] args);
 
-		public struct CommandDescription{
-			public string command;
-			public string command_args;
-			public string description_small;
-			public string description_Long;
-			public CommandExecuter.CommandFunction callback;
-
-			public CommandDescription(string _command, string _command_args, string _description_small, string _description_Long, string _callback) {
-				command = _command.ToLower();
-				command_args = _command_args;
-				description_small = _description_small;
-				description_Long = _description_Long;
-				callback = GetCallbackFromString(_command, _callback);
-			}
-
-			public CommandDescription(string _plugin, string _command, string _command_args, string _description_small, string _description_Long, CommandExecuter.CommandFunction _callback) {
-				command = _command.ToLower();
-				command_args = _command_args;
-				description_small = _description_small;
-				description_Long = _description_Long;
-				callback = _callback;
-			}
-
-			public CommandDescription(string _command, string _command_args, string _description_small, string _callback) {
-				command = _command.ToLower();
-				command_args = _command_args;
-				description_small = _description_small;
-				description_Long = string.Empty;
-				callback = GetCallbackFromString(_command, _callback);
-			}
-
-			public CommandDescription(string _command, string _command_args, string _description_small, CommandExecuter.CommandFunction _callback) {
-				command = _command.ToLower();
-				command_args = _command_args;
-				description_small = _description_small;
-				description_Long = string.Empty;
-				callback = _callback;
-			}
-
-			private static CommandExecuter.CommandFunction GetCallbackFromString(string command, string callback){
-				CommandExecuter.CommandFunction result = null;
-				MethodInfo methodInf = typeof(CommandExecuter).GetMethod (callback, 
-					BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
-				if (methodInf != null) {
-					object typeInstance = GameServer.Instance.CommandExec;
-					if (methodInf.IsStatic) {
-						result = (CommandExecuter.CommandFunction)Delegate.CreateDelegate (typeof(CommandExecuter.CommandFunction), methodInf);
-					} else
-						result = (CommandExecuter.CommandFunction)Delegate.CreateDelegate (typeof(CommandExecuter.CommandFunction), typeInstance, methodInf);
-				} else
-					Logger.LogError ("Could not find function {0}.", callback);
-				return result;
-			}
-		}
-
 		private Dictionary<string, CommandFunction> _cmdTable = new Dictionary<string, CommandFunction>();
 		private Dictionary<string, CommandDescription> _cmdDescription = new Dictionary<string, CommandDescription>();
 
@@ -81,7 +26,7 @@ namespace WarWorldInfServer
 
 		public void StartCommandLoop(){
 			LoadCommands ();
-			Logger.Log ("Command Executer initialized.");
+			//Logger.Log ("Command Executer initialized.");
 
 			while (_server.Running) {
 				ConsoleKeyInfo key = Console.ReadKey(true);
@@ -215,20 +160,20 @@ namespace WarWorldInfServer
 			SettingsLoader settings = GameServer.Instance.Settings;
 			int seed = 0;
 			if (args.Length == 1)
-				seed = settings.Standard.TerrainSeed;
+				seed = settings.TerrainSeed;
 			else if (args.Length == 2 && args [1].Equals ("-r")) {
 				seed = new Random (GameTimer.GetEpoch ()).Next (int.MinValue, int.MaxValue);
 			} else if (args.Length == 2) {
 				if (int.TryParse(args[1], out seed));
 			}
 			Thread thread = new Thread(()=>{
-				TerrainBuilder builder = new TerrainBuilder(settings.Standard.TerrainWidth, settings.Standard.TerrainHeight, seed);
+				TerrainBuilder builder = new TerrainBuilder(settings.TerrainWidth, settings.TerrainHeight, seed);
 				builder.Generate (LibNoise.GradientPresets.Terrain);
 				System.Drawing.Bitmap map = builder.GetBitmap();
 				Form imageForm = new Form ();
 				imageForm.Text = "Seed preview: " + seed;
-				imageForm.Width = settings.Standard.TerrainWidth;
-				imageForm.Height = settings.Standard.TerrainHeight;
+				imageForm.Width = settings.TerrainWidth;
+				imageForm.Height = settings.TerrainHeight;
 				imageForm.FormBorderStyle = FormBorderStyle.Sizable;
 				imageForm.Controls.Add (new PictureBox () {Image = map, Dock = DockStyle.Fill});
 				imageForm.ShowDialog();

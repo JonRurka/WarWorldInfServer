@@ -12,33 +12,32 @@ namespace WarWorldInfServer
 	public class SettingsLoader
 	{
 		public static class StandardSettingsDefaults{
+			public static int SessionKeyLength { get { return 32; } }
+			public static int ServerPort { get { return 9999; } }
+			public static int ClientPort { get { return 9999; } }
+			public static int SecondsInTicks { get { return 3600; } }
+			public static int UserTimeoutTime { get { return 3600; } }
+
 			public static int TerrainWidth { get { return 1920; } }
 			public static int TerrainHeight { get { return 1080; } }
 			public static int TerrainSeed { get { return 0; } }
 			public static string TerrainImageFile { get{ return "map.bmp"; } }
 		}
 
-		public class StandardSettings{
-			private SettingsLoader _loader;
-			public int TerrainWidth { get; private set; }
-			public int TerrainHeight { get; private set; }
-			public int TerrainSeed { get; private set; }
-			public string TerrainImageFile { get; private set; }
-
-			public StandardSettings(SettingsLoader loader){
-				_loader = loader;
-				TerrainWidth = loader.TryGetValue<int>("Terrain", "Width", StandardSettingsDefaults.TerrainWidth);
-				TerrainHeight = loader.TryGetValue<int>("Terrain", "Height", StandardSettingsDefaults.TerrainHeight);
-				TerrainSeed = loader.TryGetValue<int>("Terrain", "Seed", StandardSettingsDefaults.TerrainSeed);
-				TerrainImageFile = loader.TryGetValue<string>("Terrain", "ImageFile", StandardSettingsDefaults.TerrainImageFile);
-			}
-		}
+		public int SessionKeyLength { get; private set; }
+		public int ServerPort { get; private set; }
+		public int ClientPort { get; private set; }
+		public int SecondsInTicks { get; private set; }
+		public int UserTimeoutTime { get; private set;}
+		
+		public int TerrainWidth { get; private set; }
+		public int TerrainHeight { get; private set; }
+		public int TerrainSeed { get; private set; }
+		public string TerrainImageFile { get; private set; }
 
 		private IniData _config;
-		private StandardSettings _standard;
 
 		public IniData Config{ get { return _config; } }
-		public StandardSettings Standard { get { return _standard; } }
 	
 		public SettingsLoader (string file)
 		{
@@ -46,9 +45,22 @@ namespace WarWorldInfServer
 			parser.Parser.Configuration.CommentString = "#";
 			if (File.Exists (file)) {
 				_config = parser.ReadFile (file);
-				_standard = new StandardSettings(this);
+				LoadSettings();
 			} else
 				Logger.LogError ("Config file not found!");
+		}
+
+		public void LoadSettings(){
+			SessionKeyLength = TryGetValue<int>("General", "SessionKeyLength", StandardSettingsDefaults.SessionKeyLength);
+			ServerPort = TryGetValue<int>("General", "ServerPort", StandardSettingsDefaults.ServerPort);
+			ClientPort = TryGetValue<int>("General", "ClientPort", StandardSettingsDefaults.ClientPort);
+			SecondsInTicks = TryGetValue<int>("General", "SecondsInTicks", StandardSettingsDefaults.SecondsInTicks);
+			UserTimeoutTime = TryGetValue<int>("General", "UserTimeoutTime", StandardSettingsDefaults.UserTimeoutTime);
+			
+			TerrainWidth = TryGetValue<int>("Terrain", "Width", StandardSettingsDefaults.TerrainWidth);
+			TerrainHeight = TryGetValue<int>("Terrain", "Height", StandardSettingsDefaults.TerrainHeight);
+			TerrainSeed = TryGetValue<int>("Terrain", "Seed", StandardSettingsDefaults.TerrainSeed);
+			TerrainImageFile = TryGetValue<string>("Terrain", "ImageFile", StandardSettingsDefaults.TerrainImageFile);
 		}
 
 		public T GetSettingValue<T>(string section, string setting){
