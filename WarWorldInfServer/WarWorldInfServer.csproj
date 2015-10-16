@@ -133,9 +133,9 @@
     <Compile Include="NetServer.cs" />
     <Compile Include="UserManager.cs" />
     <Compile Include="User.cs" />
-    <Compile Include="Libnoise\CommandDescription.cs" />
     <Compile Include="SerializationStructs.cs" />
     <Compile Include="SessionKeyGenerator.cs" />
+    <Compile Include="CommandDescription.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
