@@ -76,7 +76,7 @@ namespace WarWorldInfServer
 				FileManager.SaveConfigFile(folder + userSave.name + ".json", userSave);
 			}
 
-			Logger.Log ("{0} users saved.", userList.Length);
+			Logger.Log ("{0} users saved.", userList.Length.ToString());
 		}
 	}
 }

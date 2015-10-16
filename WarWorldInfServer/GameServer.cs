@@ -98,7 +98,7 @@ namespace WarWorldInfServer
 			if (WorldLoaded) {
 				if (Users.UserExists(loginData.name)){
 					User user = Users.GetUser (loginData.name);
-					bool loggedIn = user.Login (endPoint.Address.ToString ());
+					bool loggedIn = user.Login (endPoint.Address.ToString (), loginData.password);
 					responseType = loggedIn ? SerializationStructs.LoginResponse.ResponseType.Successfull : SerializationStructs.LoginResponse.ResponseType.Failed;
 					permission = loggedIn ? user.Permission : User.PermissionLevel.None;
 					sessionKey = user.SessionKey;
