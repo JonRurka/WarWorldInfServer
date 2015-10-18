@@ -93,7 +93,12 @@ namespace WarWorldInfServer
 			_terrain.Generate (LibNoise.GradientPresets.Terrain);
 			_terrain.Save(_worldDirectory + "Map.bmp");
 
-			GameServer.Instance.Users.Save (_worldDirectory + "Users/");
+			UserManager users = GameServer.Instance.Users;
+
+			if (users != null)
+				users.Save (_worldDirectory + "Users/");
+			else
+				Logger.LogError ("user manager is null.");
 
 			Logger.Log ("World \"{0}\" created.", worldName);
 			GameServer.Instance.StartWorld (this);
@@ -133,7 +138,8 @@ namespace WarWorldInfServer
 			worldSave.time = new Time (timer.Seconds, timer.Minutes, timer.Hours, timer.Days, timer.Tick, timer.SecondsInTick, timer.MaxSecondsInTick );
 			FileManager.SaveConfigFile (_worldDirectory + "WorldSave.json", worldSave);
 
-			_terrain.Save (_worldDirectory + "Map.bmp");
+			if (!File.Exists(_worldDirectory + "Map.bmp"))
+				_terrain.Save (_worldDirectory + "Map.bmp");
 			GameServer.Instance.Users.Save (_worldDirectory + "Users/");
 			
 			Logger.Log ("World \"{0}\" saved.", worldName);

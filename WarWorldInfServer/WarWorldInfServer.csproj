@@ -45,6 +45,18 @@
       <HintPath>lib\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System.Windows.Forms" />
+    <Reference Include="MySql.Data">
+      <HintPath>lib\MySql.Data.dll</HintPath>
+    </Reference>
+    <Reference Include="MySql.Data.Entity.EF5">
+      <HintPath>lib\MySql.Data.Entity.EF5.dll</HintPath>
+    </Reference>
+    <Reference Include="MySql.Data.Entity.EF6">
+      <HintPath>lib\MySql.Data.Entity.EF6.dll</HintPath>
+    </Reference>
+    <Reference Include="MySql.Web">
+      <HintPath>lib\MySql.Web.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Main.cs" />
@@ -134,8 +146,10 @@
     <Compile Include="UserManager.cs" />
     <Compile Include="User.cs" />
     <Compile Include="SerializationStructs.cs" />
-    <Compile Include="SessionKeyGenerator.cs" />
     <Compile Include="CommandDescription.cs" />
+    <Compile Include="DataBase.cs" />
+    <Compile Include="HashHelper.cs" />
+    <Compile Include="NetworkCommands.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

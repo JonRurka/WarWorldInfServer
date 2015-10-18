@@ -25,25 +25,29 @@ namespace WarWorldInfServer
 		}
 
 		public void StartCommandLoop(){
-			LoadCommands ();
 			//Logger.Log ("Command Executer initialized.");
-
+			LoadCommands ();
 			while (_server.Running) {
-				ConsoleKeyInfo key = Console.ReadKey(true);
-				if (key.Key == ConsoleKey.Backspace){
-					if (_input.Length > 0)
-						_input = _input.Remove(_input.Length - 1);
+
+				try {
+					ConsoleKeyInfo key = Console.ReadKey(true);
+					if (key.Key == ConsoleKey.Backspace){
+						if (_input.Length > 0)
+							_input = _input.Remove(_input.Length - 1);
+					}
+					else if (key.Key == ConsoleKey.Enter){
+						string tmpStr = _input;
+						_input = string.Empty;
+						TaskQueue.QueueMain(()=>ExecuteCommand(tmpStr));
+					}
+					else{
+						_input += key.KeyChar;
+					}
+					Logger.InputStr = _input;
 				}
-				else if (key.Key == ConsoleKey.Enter){
-					string tmpStr = _input;
-					_input = string.Empty;
-					TaskQueue.QueueMain(()=>ExecuteCommand(tmpStr));
-					//ExecuteCommand(tmpStr);
+				catch (Exception e){
+					Logger.LogError("Error in command loop.");
 				}
-				else{
-					_input += key.KeyChar;
-				}
-				Logger.InputStr = _input;
 			}
 		}
 
@@ -103,23 +107,23 @@ namespace WarWorldInfServer
 
 		private object Create_CMD(params string[] args){
 			if (args.Length == 2){
-				_server.WorldMnger.CreateWorld(args[1]);
+				_server.Worlds.CreateWorld(args[1]);
 			}
 			return string.Empty;
 		}
 
 		private object Load_CMD(params string[] args){
 			if (args.Length == 2){
-				_server.WorldMnger.LoadWorld(args[1]);
+				_server.Worlds.LoadWorld(args[1]);
 			}
 			return string.Empty;
 		}
 
 		private object Save_CMD(params string[] args){
 			if (args.Length == 1)
-				_server.WorldMnger.SaveCurrentWorld();
+				_server.Save ();
 			else if (args.Length == 2)
-				_server.WorldMnger.SaveWorld(args[1]);
+				_server.Save (args [0]);
 			return string.Empty;
 		}
 
@@ -130,7 +134,7 @@ namespace WarWorldInfServer
 
 		private object Exit_CMD(params string[] args){
 			if (_server.WorldLoaded)
-				_server.WorldMnger.SaveCurrentWorld ();
+				_server.Worlds.SaveCurrentWorld ();
 			_server.Exit ();
 			return "Good bye...";
 		}

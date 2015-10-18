@@ -26,12 +26,13 @@ namespace WarWorldInfServer
 				}
 				for (int i = 0; i < _currentActions.Count; i++) {
 					try {
-					_currentActions [i] ();
-					_currentActions [i] = null;
+						_currentActions [i] ();
+						_currentActions [i] = null;
 					}
 					catch(Exception e){
 						Logger.LogError("Queue: {0}", e.Message);
-						_currentActions = null;
+						Logger.LogError(e.StackTrace);
+						_currentActions[i] = null;
 					}
 				}
 			}

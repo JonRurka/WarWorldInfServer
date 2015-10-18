@@ -18,13 +18,14 @@ namespace WarWorldInfServer
 		public struct Login{
 			public string name;
 			public string password;
+			public string salt;
 			
-			public Login(string name, string password){
+			public Login(string name, string password, string salt){
 				this.name = name;
 				this.password = password;
+				this.salt = salt;
 			}
 		}
-
 
 		// Structs sent to client from server.
 		public struct LoginResponse{

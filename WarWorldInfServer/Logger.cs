@@ -59,8 +59,10 @@ namespace WarWorldInfServer
 			if (!Directory.Exists (Directory.GetCurrentDirectory () + "/SystemLogs/"))
 				Directory.CreateDirectory (Directory.GetCurrentDirectory () + "/SystemLogs/");
 
-			if (_logFile == string.Empty) 
-				_logFile = Directory.GetCurrentDirectory() + "/SystemLogs/" + GameTimer.GetDateTime().Replace("/","-") + ".txt";
+			if (_logFile == string.Empty) {
+				int fileCount = Directory.GetFiles(Directory.GetCurrentDirectory () + "/SystemLogs/").Length;
+				_logFile = Directory.GetCurrentDirectory () + "/SystemLogs/" + fileCount + ". " + GameTimer.GetDateTime ().Replace ("/", "-") + ".txt";
+			}
 			StreamWriter writer = new StreamWriter (_logFile, true);
 			writer.WriteLine(message.ToString());
 			writer.Close ();

@@ -8,25 +8,23 @@ namespace WarWorldInfServer
 
 	public class WorldManager
 	{
-		private string _mainWorldDirectory;
-		private World _currentWorld;
 		private GameServer _server;
 		private Dictionary<string, string> _worldFolders;
 
-		public World CurrentWorld { get { return _currentWorld; } }
-		public string MainWorldDirectory { get { return _mainWorldDirectory; } }
+		public World CurrentWorld { get; private set; }
+		public string MainWorldDirectory { get; private set; }
 
 		public WorldManager (GameServer server)
 		{
 			_server = server;
 			_worldFolders = new Dictionary<string, string> ();
-			_mainWorldDirectory = Directory.GetCurrentDirectory() + "/Worlds/";
-			if (!Directory.Exists (_mainWorldDirectory)) {
-				Directory.CreateDirectory (_mainWorldDirectory);
+			MainWorldDirectory = Directory.GetCurrentDirectory() + "/Worlds/";
+			if (!Directory.Exists (MainWorldDirectory)) {
+				Directory.CreateDirectory (MainWorldDirectory);
 				Logger.Log("World Directory created.");
 			}
 
-			string[] worldDirectories = Directory.GetDirectories (_mainWorldDirectory);
+			string[] worldDirectories = Directory.GetDirectories (MainWorldDirectory);
 			for (int i = 0; i < worldDirectories.Length; i++) {
 				string folderName = Path.GetFileName(Path.GetDirectoryName(worldDirectories[i] + "/"));
 				_worldFolders[folderName] = worldDirectories[i] + "/";
@@ -37,29 +35,30 @@ namespace WarWorldInfServer
 		}
 
 		public World LoadWorld(string worldName){
-			return new World (this).LoadWorld(worldName);
+			CurrentWorld = new World (this).LoadWorld(worldName);
+			return CurrentWorld;
 		}
 
 		public void SaveCurrentWorld(){
-			SaveWorld (_currentWorld.WorldName);
+			SaveWorld (CurrentWorld.WorldName);
 		}
 
 		public void SaveWorld(string worldName){
 			if (WorldExists (worldName)) {
-				_currentWorld.Save (worldName);
-				Logger.LogWarning ("World \"{0}\" saved.", worldName);
+				CurrentWorld.Save (worldName);
 			} else {
-				_currentWorld = CreateWorld(worldName);
+				CurrentWorld = CreateWorld(worldName);
 			}
 		}
 
 		public World CreateWorld(string worldName){
 			if (!WorldExists (worldName)) {
-				return new World (this).CreateNewWorld (worldName);
-				Logger.Log ("World \"{0}\" created.", worldName);
+				CurrentWorld = new World (this).CreateNewWorld (worldName);
+				return CurrentWorld;
 			}
 			Logger.LogWarning ("Loading world \"{0}\" as it already exists.", worldName);
-			return new World (this).LoadWorld (worldName);
+			CurrentWorld = new World (this).LoadWorld (worldName);
+			return CurrentWorld;
 		}
 
 		public void AddWorldDirectory(string worldName, string directory){

@@ -14,8 +14,8 @@ namespace WarWorldInfServer
 			Admin
 		}
 
+		public string Id { get; set; }
 		public string Name { get; set; }
-		public string PasswordHash { get; set;}
 		public string Ip { get; set; }
 		public string SessionKey { get; set; }
 		public bool Connected { get; set;}
@@ -43,11 +43,12 @@ namespace WarWorldInfServer
 		}
 
 		public bool Login(string ip, string passwordHash){
-			if (passwordHash == PasswordHash) {
+			if (passwordHash.Equals(GameServer.Instance.DB.GetPassword(Name))) {
 				Ip = ip;
-				SessionKey = SessionKeyGenerator.RandomKey (GameServer.Instance.Settings.SessionKeyLength);
+				SessionKey = HashHelper.RandomKey (GameServer.Instance.Settings.SessionKeyLength);
 				LoginMessage = "success";
 				Connected = true;
+				Permission = (PermissionLevel)Enum.Parse(typeof(PermissionLevel), GameServer.Instance.DB.GetPermission(Name));
 				ResetTimer ();
 				return true;
 			}
@@ -60,14 +61,12 @@ namespace WarWorldInfServer
 			SaveVersions.Version_Current.User user = new SaveVersions.Version_Current.User ();
 			user.name = Name;
 			user.permission = Permission;
-			user.passwordHash = PasswordHash;
 			return user;
 		}
 
 		public void Deserialize(SaveVersions.Version_Current.User user){
 			Name = user.name;
 			Permission = user.permission;
-			PasswordHash = user.passwordHash;
 		}
 
 		public void ResetTimer(){

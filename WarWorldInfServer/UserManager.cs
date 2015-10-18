@@ -8,7 +8,7 @@ namespace WarWorldInfServer
 {
 	public class UserManager
 	{
-		private Dictionary<string, User> _users;
+		private Dictionary<string, User> _users = new Dictionary<string, User> ();
 		/* Holds the lists of users.
 		 * 
 		 */ 
@@ -16,7 +16,7 @@ namespace WarWorldInfServer
 
 		public UserManager ()
 		{
-			_users = new Dictionary<string, User> ();
+
 		}
 
 		public User LoadCreateUser(string name){
@@ -26,8 +26,10 @@ namespace WarWorldInfServer
 		}
 
 		public User CreateUser(string name){
-			User user = new User ();
-			user.Name = name;
+			SaveVersions.Version_Current.User usrSave = new SaveVersions.Version_Current.User ();
+			usrSave.name = name;
+			User user = new User (usrSave);
+			_users.Add (name, user);
 			return user;
 		}
 

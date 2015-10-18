@@ -22,6 +22,11 @@ namespace WarWorldInfServer
 			public static int TerrainHeight { get { return 1080; } }
 			public static int TerrainSeed { get { return 0; } }
 			public static string TerrainImageFile { get{ return "map.bmp"; } }
+
+			public static string Database { get{return "WarWorldInfDB";} }
+			public static string DbServer { get{return "localhost";} }
+			public static string DbUsername { get {return "root";} }
+			public static string DbPassword { get{return "";} }
 		}
 
 		public int SessionKeyLength { get; private set; }
@@ -34,6 +39,11 @@ namespace WarWorldInfServer
 		public int TerrainHeight { get; private set; }
 		public int TerrainSeed { get; private set; }
 		public string TerrainImageFile { get; private set; }
+
+		public string Database { get; private set; }
+		public string DbServer { get; private set; }
+		public string DbUsername { get; private set; }
+		public string DbPassword { get; private set; }
 
 		private IniData _config;
 
@@ -61,6 +71,11 @@ namespace WarWorldInfServer
 			TerrainHeight = TryGetValue<int>("Terrain", "Height", StandardSettingsDefaults.TerrainHeight);
 			TerrainSeed = TryGetValue<int>("Terrain", "Seed", StandardSettingsDefaults.TerrainSeed);
 			TerrainImageFile = TryGetValue<string>("Terrain", "ImageFile", StandardSettingsDefaults.TerrainImageFile);
+
+			Database = TryGetValue<string>("Database", "Database", StandardSettingsDefaults.Database);
+			DbServer = TryGetValue<string>("Database", "Server", StandardSettingsDefaults.DbServer);
+			DbUsername = TryGetValue<string>("Database", "Username", StandardSettingsDefaults.DbUsername);
+			DbPassword = TryGetValue<string>("Database", "Password", StandardSettingsDefaults.DbPassword);
 		}
 
 		public T GetSettingValue<T>(string section, string setting){
