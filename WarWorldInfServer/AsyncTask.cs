@@ -31,7 +31,7 @@ namespace WarWorldInfServer
 			}
 		}
 
-		public void Stop(){
+		public void Close(){
 			_run = false;
 		}
 

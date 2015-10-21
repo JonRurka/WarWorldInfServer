@@ -1,4 +1,4 @@
-﻿// 
+// 
 // Copyright (c) 2013 Jason Bell
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -31,14 +31,14 @@ namespace LibNoise.Modifiers
         public IModule SourceModule1 { get; set; }
         public IModule SourceModule2 { get; set; }
 
-        private double mEdgeFalloff;
+        public double mEdgeFalloff;
         public double UpperBound { get; private set; }
         public double LowerBound { get; private set; }
 
         public Select(IModule control, IModule source1, IModule source2)
         {
-            if (control == null || source1 == null || source2 == null)
-                throw new ArgumentNullException("Control and source modules must be provided.");
+            //if (control == null || source1 == null || source2 == null)
+            //    throw new ArgumentNullException("Control and source modules must be provided.");
 
             ControlModule = control;
             SourceModule1 = source1;

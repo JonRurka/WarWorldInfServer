@@ -465,8 +465,8 @@ namespace LibNoise
 		{
 			//Bitmap map = new Bitmap (_width, _height, System.Drawing.Imaging.PixelFormat.DontCare);
 			Color[] pixels = new Color[_width * _height];
-			for (int x = 0; x < _width; x++) {
-				for (int y = 0; y < _height; y++){
+			for (int x = 0, locX = 0; x < _width; x++, locX++) {
+				for (int y = 0, locY = 0; y < _height; y++, locY++){
 					float sample;
 					if (!float.IsNaN(_borderValue) &&
 					    (x == 0 || x== _width - _ucBorder | y == 0 || y == _height - _ucBorder))
@@ -478,8 +478,12 @@ namespace LibNoise
 						sample = _data[x, y];
 					}
 					//map.SetPixel(x, y, gradient.Evaluate((sample + 1) / 2));
-					pixels[x + y * _width] = gradient.Evaluate((sample + 1) / 2);
+					pixels[x + y * _width] = gradient.Evaluate(locX, locY, (sample + 1) / 2);
+					if (locY >= 9)
+						locY = 0;
 				}
+				if (locX >= 9)
+					locX = 0;
 			}
 			return pixels;
 

@@ -9,6 +9,7 @@ namespace WarWorldInfServer
 	public class UserManager
 	{
 		private Dictionary<string, User> _users = new Dictionary<string, User> ();
+		private Dictionary<string, User> _connectedUsers = new Dictionary<string, User>();
 		/* Holds the lists of users.
 		 * 
 		 */ 
@@ -51,6 +52,26 @@ namespace WarWorldInfServer
 			return null;
 		}
 
+		public User GetConnectedUser(string key){
+			if (SessionKeyExists (key))
+				return _connectedUsers [key];
+			return null;
+		}
+
+		public bool SessionKeyExists(string key){
+			return _connectedUsers.ContainsKey (key);
+		}
+
+		public void AddConnectedUser(string key, User usr){
+			_connectedUsers [key] = usr;
+		}
+
+		public void RemoveConnectedUser(string key){
+			if (_connectedUsers.ContainsKey (key)) {
+				_connectedUsers.Remove(key);
+			}
+		}
+
 		public void AddUser(User user){
 			if (!UserExists (user.Name)) {
 				_users.Add(user.Name, user);
@@ -61,7 +82,7 @@ namespace WarWorldInfServer
 			if (Directory.Exists (folder)) {
 				string[] userFiles = Directory.GetFiles(folder, "*.json");
 				for (int i = 0; i < userFiles.Length; i++){
-					SaveVersions.Version_Current.User userSave = FileManager.LoadObject<SaveVersions.Version_Current.User>(userFiles[i]);
+					SaveVersions.Version_Current.User userSave = FileManager.LoadObject<SaveVersions.Version_Current.User>(userFiles[i], false);
 					AddUser(new User(userSave));
 				}
 			} else
@@ -73,9 +94,9 @@ namespace WarWorldInfServer
 				Directory.CreateDirectory (folder);
 
 			User[] userList = GetUsers ();
-			foreach (User user in userList) {
-				SaveVersions.Version_Current.User userSave = user.GetSerializer();
-				FileManager.SaveConfigFile(folder + userSave.name + ".json", userSave);
+			for (int i = 0; i < userList.Length; i++) {
+				SaveVersions.Version_Current.User userSave = userList[i].GetSerializer();
+				FileManager.SaveConfigFile(folder + userSave.name + ".json", userSave, false);
 			}
 
 			Logger.Log ("{0} users saved.", userList.Length.ToString());

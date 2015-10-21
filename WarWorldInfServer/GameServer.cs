@@ -3,6 +3,9 @@ using System.IO;
 using System.Threading;
 using System.Net;
 using Newtonsoft.Json;
+using LibNoise;
+using LibNoise.Models;
+using LibNoise.Modifiers;
 
 namespace WarWorldInfServer
 {
@@ -59,15 +62,24 @@ namespace WarWorldInfServer
 		public void GameLoop(){
 			while (Running) {
 				_resetEvent.WaitOne (1);
-				if (WorldLoaded){
-					if (GameTime.Update()){ // every second
-						if (GameTime.TickIncrease){ // update when enough seconds pass to increase tick.
-							Logger.Log("Updating world. Tick: {0}", GameTime.Tick.ToString());
+				try {
+					if (WorldLoaded){
+						if (GameTime.Update()){ // every second
+							if (GameTime.Seconds % Settings.AutoSaveInterval == 0)
+								Save();
+							if (GameTime.TickIncrease){ // update when enough seconds pass to increase tick.
+								Logger.Log("Updating world. Tick: {0}", GameTime.Tick.ToString());
+								Save();
+							}
 						}
 					}
+					Net.Update();
+					_taskQueue.Update(); // run items queued during frame.
+					Logger.Update(); // print items sent to log during frame.
 				}
-				_taskQueue.Update(); // run items queued during frame.
-				Logger.Update(); // print items sent to log during frame.
+				catch (Exception e){
+					Logger.LogError("{0}: {1}\n{1}", e.InnerException.GetType(), e.Message, e.StackTrace);
+				}
 			}
 		}
 
@@ -81,7 +93,6 @@ namespace WarWorldInfServer
 
 		public void StartWorld(World world){
 			GameTime = new GameTimer (world.WorldStartTime);
-			Users = new UserManager ();
 			WorldLoaded = true;
 			Logger.Log ("World \"{0}\" started.", world.WorldName);
 		}
@@ -95,9 +106,11 @@ namespace WarWorldInfServer
 		}
 
 		public void Exit(){
+			WorldLoaded = false;
+			Net.Close();
+			TaskQueue.Close ();
 			Running = false;
-			if (WorldLoaded)
-				WorldLoaded = false;
+			_tickThread.Abort ();
 		}
 	}
 }

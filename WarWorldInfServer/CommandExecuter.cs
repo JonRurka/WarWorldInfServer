@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Windows.Forms;
 using System.Threading;
+using System.Drawing;
+using LibNoise;
 
 namespace WarWorldInfServer
 {
@@ -28,7 +30,6 @@ namespace WarWorldInfServer
 			//Logger.Log ("Command Executer initialized.");
 			LoadCommands ();
 			while (_server.Running) {
-
 				try {
 					ConsoleKeyInfo key = Console.ReadKey(true);
 					if (key.Key == ConsoleKey.Backspace){
@@ -77,17 +78,22 @@ namespace WarWorldInfServer
 		}
 
 		private void ExecuteCommand(string command){
-			Logger.Print ("> {0}", command);
-			command = command.Trim ();
-			if (!string.IsNullOrEmpty (command)) {
-				string[] args = command.Split (new[]{' '}, System.StringSplitOptions.RemoveEmptyEntries);
-				string cmd = args [0].ToLower ();
-				if (_cmdTable.ContainsKey (cmd)) {
-					string result = _cmdTable [cmd] (args).ToString ();
-					if (result != string.Empty)
-						Logger.Print (result);
-				} else
-					Logger.LogError ("Command not found: {0}", args [0]);
+			try {
+				Logger.Print ("> {0}", command);
+				command = command.Trim ();
+				if (!string.IsNullOrEmpty (command)) {
+					string[] args = command.Split (new[]{' '}, System.StringSplitOptions.RemoveEmptyEntries);
+					string cmd = args [0].ToLower ();
+					if (_cmdTable.ContainsKey (cmd)) {
+						string result = _cmdTable [cmd] (args).ToString ();
+						if (result != string.Empty)
+							Logger.Print (result);
+					} else
+						Logger.LogError ("Command not found: {0}", args [0]);
+				}
+			}
+			catch (Exception e){
+				Logger.LogError("{0}: {1}\n{1}", e.InnerException.GetType(), e.Message, e.StackTrace);
 			}
 		}
 
@@ -123,7 +129,7 @@ namespace WarWorldInfServer
 			if (args.Length == 1)
 				_server.Save ();
 			else if (args.Length == 2)
-				_server.Save (args [0]);
+				_server.Save (args [1]);
 			return string.Empty;
 		}
 
@@ -136,7 +142,8 @@ namespace WarWorldInfServer
 			if (_server.WorldLoaded)
 				_server.Worlds.SaveCurrentWorld ();
 			_server.Exit ();
-			return "Good bye...";
+			Logger.Log ("Good bye...");
+			return string.Empty;
 		}
 
 		private object Help_CMD(params string[] args){
@@ -160,7 +167,7 @@ namespace WarWorldInfServer
 			return output.ToString();
 		}
 
-		private object preview_CMD(params string[] args){
+		private object Preview_CMD(params string[] args){
 			SettingsLoader settings = GameServer.Instance.Settings;
 			int seed = 0;
 			if (args.Length == 1)
@@ -170,23 +177,52 @@ namespace WarWorldInfServer
 			} else if (args.Length == 2) {
 				if (int.TryParse(args[1], out seed));
 			}
-			Thread thread = new Thread(()=>{
-				TerrainBuilder builder = new TerrainBuilder(settings.TerrainWidth, settings.TerrainHeight, seed);
-				builder.Generate (LibNoise.GradientPresets.Terrain);
-				System.Drawing.Bitmap map = builder.GetBitmap();
-				Form imageForm = new Form ();
-				imageForm.Text = "Seed preview: " + seed;
-				imageForm.Width = settings.TerrainWidth;
-				imageForm.Height = settings.TerrainHeight;
-				imageForm.FormBorderStyle = FormBorderStyle.Sizable;
-				imageForm.Controls.Add (new PictureBox () {Image = map, Dock = DockStyle.Fill});
-				imageForm.ShowDialog();
-				Logger.Log("Preview closed.");
-				imageForm.Close();
-				imageForm.Dispose();
+			TaskQueue.QeueAsync("terrain preview", ()=>{
+				try {
+					TerrainBuilder builder = new TerrainBuilder(settings.TerrainWidth, settings.TerrainHeight, seed);
+					
+					/*List<GradientPresets.GradientKeyData> keys = new List<GradientPresets.GradientKeyData>();
+					
+					keys.Add(new GradientPresets.GradientKeyData(new GradientPresets.GColor(255, 0, 0, 128), 0));
+					keys.Add(new GradientPresets.GradientKeyData(new GradientPresets.GColor(255, 32, 64, 128), 0.4f));
+					keys.Add(new GradientPresets.GradientKeyData(new GradientPresets.GColor(255, 64, 96, 191), 0.48f));
+					keys.Add(new GradientPresets.GradientKeyData(new List<string> {"terrainTextures/sand.png"}, 0.5f));
+					keys.Add(new GradientPresets.GradientKeyData(new List<string> {"terrainTextures/trees1.png", "terrainTextures/trees2.png"}, 0.52f));
+					keys.Add(new GradientPresets.GradientKeyData(new List<string> {"terrainTextures/grass1.png", "terrainTextures/trees2.png"}, 0.55f));
+					keys.Add(new GradientPresets.GradientKeyData(new List<string> {"terrainTextures/grass1.png", "terrainTextures/grass2.png", "terrainTextures/trees2.png"}, 0.60f));
+					keys.Add(new GradientPresets.GradientKeyData(new List<string> {"terrainTextures/grass1.png", "terrainTextures/grass2.png"}, 0.90f));
+					keys.Add(new GradientPresets.GradientKeyData(new List<string> {"terrainTextures/grass1.png", "terrainTextures/grass2.png"}, 1f));
+					GradientPresets.CreateGradient(keys);
+					GradiantPresetLoader.PresetSerializer saveObj = new GradiantPresetLoader.PresetSerializer("terrain", keys);
+					FileManager.SaveConfigFile(GameServer.Instance.AppDirectory + "GradientPresets/terrain.json", saveObj, false);
+					return;*/
+					IModule module = new Perlin ();
+					((Perlin)module).OctaveCount = 16;
+					((Perlin)module).Seed = settings.TerrainSeed;
+
+					builder.Generate (module, "terrain");
+					System.Drawing.Bitmap map = builder.GetBitmap();
+					Form imageForm = new Form ();
+					imageForm.Text = "Seed preview: " + seed;
+					imageForm.Width = settings.TerrainWidth;
+					imageForm.Height = settings.TerrainHeight;
+					imageForm.FormBorderStyle = FormBorderStyle.Sizable;
+					imageForm.Controls.Add (new PictureBox () {Image = map, Dock = DockStyle.Fill});
+					imageForm.ShowDialog();
+					Logger.Log("Preview closed.");
+					imageForm.Close();
+					imageForm.Dispose();
+				}
+				catch(Exception e){
+					Logger.LogError("{0}\n{1}", e.Message, e.StackTrace);
+				}
 			});
-			thread.Start ();
 			return "Seed: " + seed;
+		}
+
+		private object NetUsage_CMD(params string[] args){
+			_server.Net.DisplayDataRate ();
+			return string.Empty;
 		}
 	}
 }

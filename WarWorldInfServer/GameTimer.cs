@@ -5,6 +5,7 @@ namespace WarWorldInfServer
 	public class GameTimer
 	{
 		private SetableStopwatch _watch;
+		private int _totalSeconds;
 		private int _seconds;
 		private int _minutes;
 		private int _hours;
@@ -17,6 +18,7 @@ namespace WarWorldInfServer
 		private int _tick;
 		private bool _tickIncrease;
 
+		public int TotalSeconds { get { return _totalSeconds; } }
 		public int Seconds { get { return _seconds;}  }
 		public int Minutes { get {  return _minutes;}  }
 		public int Hours { get { return _hours; } }
@@ -30,9 +32,11 @@ namespace WarWorldInfServer
 
 		public GameTimer (World.Time offset)
 		{
-			_secondsInTick = offset.secondsInTicks;
+			_totalSeconds = offset.seconds;
+			_secondsInTick = 0;
 			_maxSecondsInTick = offset.maxSecondsInTicks;
-			_watch = new SetableStopwatch (new TimeSpan(offset.hours, offset.minutes, offset.seconds));
+			_tick = offset.tick;
+			_watch = new SetableStopwatch (new TimeSpan(0, 0, 0));
 			_watch.Start ();
 			_previousSecond = (int)_watch.Seconds;
 			Logger.Log ("Game Timer Initialized.");
@@ -43,9 +47,10 @@ namespace WarWorldInfServer
 			if (_previousSecond != newSecond){
 				_previousSecond = newSecond;
 				_seconds = newSecond;
-				_minutes = (int)_watch.Minutes;
-				_hours = (int)_watch.Hours;
-				_days = (int)_watch.Days;
+				_totalSeconds++;
+				_minutes = _totalSeconds / 60;
+				_hours = _minutes / 60;
+				_days = _hours / 24;
 				_months = _days / 30;
 				_years = _months / 12;
 				if (SecondsInTick >= MaxSecondsInTick){

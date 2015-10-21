@@ -38,6 +38,15 @@ namespace WarWorldInfServer
 			}
 		}
 
+		public static void Close(){
+			if (_instance != null && _instance._asyncTasks != null) {
+				foreach (AsyncTask task in new List<AsyncTask>(_instance._asyncTasks.Values)){
+					task.Close();
+				}
+				_instance._asyncTasks.Clear();
+			}
+		}
+
 		public static void QueueMain(Action action) {
 			if (_instance != null && _instance._actions != null) {
 				lock (_instance._actions){

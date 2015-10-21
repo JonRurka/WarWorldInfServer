@@ -29,15 +29,15 @@ namespace WarWorldInfServer
 
 		}
 
-		public static void Log(object message, params string[] args){
+		public static void Log(object message, params object[] args){
 			Print (string.Format("[{0}]: {1}", GameTimer.GetTime(), string.Format(message.ToString(), args)));
 		}
 
-		public static void LogWarning(object message, params string[] args){
+		public static void LogWarning(object message, params object[] args){
 			Print (string.Format("[{0} WARNING]: {1}", GameTimer.GetTime(), string.Format(message.ToString(), args)));
 		}
 
-		public static void LogError(object message, params string[] args){
+		public static void LogError(object message, params object[] args){
 			Print (string.Format("[{0} ERROR]: {1}", GameTimer.GetTime(), string.Format(message.ToString(), args)));
 		}
 

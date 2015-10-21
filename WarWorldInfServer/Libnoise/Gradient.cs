@@ -5,22 +5,24 @@ namespace LibNoise
 {
 	public class Gradient
 	{
-		public GradientColorKey[] colorKeys;
+		public GradientKey[] colorKeys;
+		private Random rand;
 
 		public Gradient ()
 		{
-			SetKeys (new GradientColorKey[0]);
+			SetKeys (new GradientKey[0]);
+			rand = new Random ();
 		}
 
-		public Color Evaluate(float time)
+		public Color Evaluate(int locX, int locY, float time)
 		{
 			if (time < 0)
 				time = 0;
 			if (time > 1)
 				time = 1;
 			
-			GradientColorKey lowerKey = new GradientColorKey();
-			GradientColorKey upperKey = new GradientColorKey();
+			GradientKey lowerKey = new GradientKey();
+			GradientKey upperKey = new GradientKey();
 			for (int i = 0; i < colorKeys.Length; i++) {
 				float bottom = colorKeys[i].time;
 				float top = colorKeys[i + 1].time;
@@ -30,11 +32,24 @@ namespace LibNoise
 					break;
 				}
 			}
-			
+			Color lowColor = new Color ();
+			Color upperColor = new Color ();
+			int lowIndex = rand.Next (0, lowerKey.colors.Count);
+			int upIndex = rand.Next (0, upperKey.colors.Count);
+			if (lowerKey.hasImage)
+				lowColor = lowerKey.GetPixel (lowIndex, locX, locY);
+			else
+				lowColor = lowerKey.color;
+
+			if (upperKey.hasImage)
+				upperColor = upperKey.GetPixel (upIndex, locX, locY);
+			else
+				upperColor = upperKey.color;
+
 			float t = GetPercent(lowerKey.time, time, upperKey.time);
-			int r = lerp(lowerKey.color.R, upperKey.color.R, t);
-			int g = lerp(lowerKey.color.G, upperKey.color.G, t);
-			int b = lerp(lowerKey.color.B, upperKey.color.B, t);
+			int r = lerp(lowColor.R, upperColor.R, t);
+			int g = lerp(lowColor.G, upperColor.G, t);
+			int b = lerp(lowColor.B, upperColor.B, t);
 			return Color.FromArgb(255, r, g, b);
 
 			return new Color ();
@@ -50,7 +65,7 @@ namespace LibNoise
 			return (int)(a + f * (b - a));
 		}
 
-		public void SetKeys(GradientColorKey[] colors)
+		public void SetKeys(GradientKey[] colors)
 		{
 			colorKeys = colors;
 		}

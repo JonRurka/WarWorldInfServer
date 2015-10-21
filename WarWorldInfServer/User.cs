@@ -50,6 +50,7 @@ namespace WarWorldInfServer
 				Connected = true;
 				Permission = (PermissionLevel)Enum.Parse(typeof(PermissionLevel), GameServer.Instance.DB.GetPermission(Name));
 				ResetTimer ();
+				GameServer.Instance.Users.AddConnectedUser(SessionKey, this);
 				return true;
 			}
 			SessionKey = "";

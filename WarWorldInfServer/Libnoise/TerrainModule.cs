@@ -7,12 +7,12 @@ namespace LibNoise
 {
     public class TerrainModule : IModule
     {
-        private IModule _module;
-        private int _seed;
+        public IModule module;
+        public int seed;
 
         public TerrainModule(int seed)
         {
-            _seed = seed;
+            this.seed = seed;
 
             RidgedMultifractal mountains = new RidgedMultifractal();
             mountains.Seed = seed;
@@ -37,13 +37,13 @@ namespace LibNoise
             Select selector = new Select(selectorControl, scaleMountain, scaleHill);
             selector.SetBounds(0, 1000);
             selector.EdgeFalloff = 0.5;
-            _module = selector;
+			module = selector;
 
         }
 
         public double GetValue(double x, double y, double z)
         {
-            return _module.GetValue(x, 0, z) / 3.5;
+            return module.GetValue(x, 0, z) / 3.5;
         }
 
         public double GetValue(double x, double y)

@@ -1,5 +1,8 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
+using LibNoise;
+
 namespace WarWorldInfServer
 {
 	public class World
@@ -8,7 +11,7 @@ namespace WarWorldInfServer
 		{
 			public string version;
 			public Time time;
-			public TerrainSettings terrain;
+			public TerrainBuilder.TerrainSettings terrain;
 		}
 
 		public struct Time
@@ -41,32 +44,17 @@ namespace WarWorldInfServer
 				this.maxSecondsInTicks = time.maxSecondsInTicks;
 			}
 		}
-		public struct TerrainSettings
-		{
-			public int width;
-			public int height;
-			public int seed;
-			public string imageFile;
 
-			public TerrainSettings(int width, int height, int seed, string imageFile){
-				this.width = width;
-				this.height = height;
-				this.seed = seed;
-				this.imageFile = imageFile;
-			}
-		}
-
-
-		private string _worldName;
-		private string _worldDirectory;
+		//private string _worldName;
+		//private string _worldDirectory;
 		private WorldManager _worldManager;
-		private Time _time;
-		private TerrainBuilder _terrain;
+		//private Time _time;
+		//private TerrainBuilder _terrain;
 
-		public string WorldName { get { return _worldName; } }
-		public string WorldDirectory { get { return _worldDirectory; } }
-		public Time WorldStartTime{ get { return _time; } }
-		public TerrainBuilder Terrain { get { return _terrain; } }
+		public string WorldName { get; private set; }
+		public string WorldDirectory { get; private set; }
+		public Time WorldStartTime{ get; private set; }
+		public TerrainBuilder Terrain { get; private set; }
 
 		public World (WorldManager worldManager)
 		{
@@ -74,31 +62,32 @@ namespace WarWorldInfServer
 		}
 
 		public World CreateNewWorld(string worldName){
-			_worldDirectory = _worldManager.MainWorldDirectory + worldName + "/";
-			if (!Directory.Exists (_worldDirectory))
-				Directory.CreateDirectory (_worldDirectory);
-			_worldManager.AddWorldDirectory (worldName, _worldDirectory);
+			WorldDirectory = _worldManager.MainWorldDirectory + worldName + "/";
+			if (!Directory.Exists (WorldDirectory))
+				Directory.CreateDirectory (WorldDirectory);
+			_worldManager.AddWorldDirectory (worldName, WorldDirectory);
 
 			//TODO: create config and save files.
-			_worldName = worldName;
 			SettingsLoader settings = GameServer.Instance.Settings;
+
+			IModule module = new Perlin ();
+			((Perlin)module).OctaveCount = 16;
+			((Perlin)module).Seed = settings.TerrainSeed;
+
+			Terrain = new TerrainBuilder (settings.TerrainWidth, settings.TerrainHeight, settings.TerrainSeed);
+			Terrain.Generate (module, settings.TerrainPreset);
+			Terrain.Save(WorldDirectory + settings.TerrainImageFile);
+			Terrain.SaveModule(WorldDirectory + settings.TerrainModuleFile);
+
+			WorldName = worldName;
 			WorldConfigSave worldSave = new WorldConfigSave ();
-			_time = new Time (0, 0, 0, 0, 0, 0, settings.SecondsInTicks);
+			WorldStartTime = new Time (0, 0, 0, 0, 0, 0, settings.SecondsInTicks);
 			worldSave.version = GameServer.Instance.Version;
-			worldSave.time = _time;
-			worldSave.terrain = new TerrainSettings (settings.TerrainWidth, settings.TerrainHeight, settings.TerrainSeed, settings.TerrainImageFile);
-			FileManager.SaveConfigFile(_worldDirectory + "WorldSave.json", worldSave);
+			worldSave.time = WorldStartTime;
+			worldSave.terrain = Terrain.Settings;
+			FileManager.SaveConfigFile(WorldDirectory + settings.WorldSaveFile, worldSave, false);
 
-			_terrain = new TerrainBuilder (worldSave.terrain.width, worldSave.terrain.height, worldSave.terrain.height);
-			_terrain.Generate (LibNoise.GradientPresets.Terrain);
-			_terrain.Save(_worldDirectory + "Map.bmp");
-
-			UserManager users = GameServer.Instance.Users;
-
-			if (users != null)
-				users.Save (_worldDirectory + "Users/");
-			else
-				Logger.LogError ("user manager is null.");
+			GameServer.Instance.Users.Save(WorldDirectory + "Users/");
 
 			Logger.Log ("World \"{0}\" created.", worldName);
 			GameServer.Instance.StartWorld (this);
@@ -108,14 +97,16 @@ namespace WarWorldInfServer
 
 		public World LoadWorld(string worldName){
 			if (_worldManager.WorldExists (worldName)) {
-				_worldDirectory = _worldManager.GetWorldDirectory(worldName);
+				WorldDirectory = _worldManager.GetWorldDirectory(worldName);
 
 				//TODO: Load world config and save files.
-				_worldName = worldName;
-				WorldConfigSave worldSave = (WorldConfigSave)FileManager.LoadObject<WorldConfigSave>(_worldDirectory + "WorldSave.json");
-				_time = worldSave.time;
-				_terrain = new TerrainBuilder(_worldDirectory + "Map.bmp");
-				GameServer.Instance.Users.LoadUsers(_worldDirectory + "Users/");
+				SettingsLoader settings = GameServer.Instance.Settings;
+
+				WorldName = worldName;
+				WorldConfigSave worldSave = (WorldConfigSave)FileManager.LoadObject<WorldConfigSave>(WorldDirectory + settings.WorldSaveFile, false);
+				WorldStartTime = worldSave.time;
+				Terrain = new TerrainBuilder(worldSave.terrain);
+				GameServer.Instance.Users.LoadUsers(WorldDirectory + "Users/");
 
 				Logger.Log("World \"{0}\" loaded.", worldName);
 				GameServer.Instance.StartWorld(this);
@@ -130,17 +121,19 @@ namespace WarWorldInfServer
 
 		public void Save(string worldName){
 			// Save changes to files
-			_worldDirectory = _worldManager.MainWorldDirectory + worldName + "/";
+			WorldDirectory = _worldManager.MainWorldDirectory + worldName + "/";
+			SettingsLoader settings = GameServer.Instance.Settings;
 
 			WorldConfigSave worldSave = new WorldConfigSave ();
 			GameTimer timer = GameServer.Instance.GameTime;
 			worldSave.version = GameServer.Instance.Version;
-			worldSave.time = new Time (timer.Seconds, timer.Minutes, timer.Hours, timer.Days, timer.Tick, timer.SecondsInTick, timer.MaxSecondsInTick );
-			FileManager.SaveConfigFile (_worldDirectory + "WorldSave.json", worldSave);
+			worldSave.time = new Time (timer.TotalSeconds, timer.Minutes, timer.Hours, timer.Days, timer.Tick, timer.SecondsInTick, timer.MaxSecondsInTick );
+			worldSave.terrain = Terrain.Settings;
+			FileManager.SaveConfigFile (WorldDirectory + settings.WorldSaveFile, worldSave, false);
 
-			if (!File.Exists(_worldDirectory + "Map.bmp"))
-				_terrain.Save (_worldDirectory + "Map.bmp");
-			GameServer.Instance.Users.Save (_worldDirectory + "Users/");
+			if (!File.Exists(WorldDirectory + settings.TerrainImageFile))
+				Terrain.Save (WorldDirectory + settings.TerrainImageFile);
+			GameServer.Instance.Users.Save (WorldDirectory + "Users/");
 			
 			Logger.Log ("World \"{0}\" saved.", worldName);
 		}

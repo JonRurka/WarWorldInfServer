@@ -14,6 +14,13 @@ namespace WarWorldInfServer
 	{
 		public class Version_Current
 		{
+			public struct WorldConfigSave
+			{
+				public string version;
+				public Time time;
+				public TerrainBuilder.TerrainSettings terrain;
+			}
+
 			public struct Time
 			{
 				public int seconds;
@@ -34,7 +41,7 @@ namespace WarWorldInfServer
 					this.maxSecondsInTicks = maxSecondsInTicks;
 				}
 				
-				public Time(World.Time time){
+				/*public Time(World.Time time){
 					this.seconds = time.seconds;
 					this.minutes = time.minutes;
 					this.hours = time.hours;
@@ -42,7 +49,7 @@ namespace WarWorldInfServer
 					this.tick = time.tick;
 					this.secondsInTicks = time.secondsInTicks;
 					this.maxSecondsInTicks = time.maxSecondsInTicks;
-				}
+				}*/
 			}
 			
 			public struct User{

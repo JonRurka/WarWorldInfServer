@@ -6,14 +6,23 @@ namespace WarWorldInfServer
 {
 	public static class FileManager
 	{
-		public static void SaveConfigFile(string file, object saveObject){
-			string jsonStr = JsonConvert.SerializeObject (saveObject);
+		public static void SaveConfigFile(string file, object saveObject, bool saveTypes){
+			string jsonStr = string.Empty;
+			if (saveTypes)
+				jsonStr = JsonConvert.SerializeObject (saveObject, Formatting.Indented, new JsonSerializerSettings{TypeNameHandling = TypeNameHandling.All});
+			else 
+				jsonStr = JsonConvert.SerializeObject (saveObject, Formatting.Indented);
 			SaveString (file, jsonStr);
 		}
 
-		public static T LoadObject<T>(string file){
+		public static T LoadObject<T>(string file, bool loadTypes){
 			string contents =  LoadString(file);
-			return JsonConvert.DeserializeObject<T> (contents);
+			T jsonObj;
+			if (loadTypes)
+				jsonObj = JsonConvert.DeserializeObject<T> (contents, new JsonSerializerSettings{TypeNameHandling = TypeNameHandling.All});
+			else
+				jsonObj = JsonConvert.DeserializeObject<T> (contents);
+			return jsonObj;
 		}
 
 		public static void SaveString(string file, string content){

@@ -109,7 +109,6 @@
     <Compile Include="Libnoise\Modfiers\Terrace.cs" />
     <Compile Include="Libnoise\Modfiers\TranslateInput.cs" />
     <Compile Include="Libnoise\GradientPresets.cs" />
-    <Compile Include="Libnoise\GradientColorKey.cs" />
     <Compile Include="Libnoise\GradientAlphaKey.cs" />
     <Compile Include="Libnoise\Gradient.cs" />
     <Compile Include="TerrainBuilder.cs" />
@@ -150,6 +149,9 @@
     <Compile Include="DataBase.cs" />
     <Compile Include="HashHelper.cs" />
     <Compile Include="NetworkCommands.cs" />
+    <Compile Include="Libnoise\GradientKey.cs" />
+    <Compile Include="JsonHelper.cs" />
+    <Compile Include="GradiantPresetLoader.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
