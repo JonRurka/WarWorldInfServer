@@ -39,6 +39,7 @@ namespace WarWorldInfServer
 		public Color[] ColorMap { get; private set; }
 		public TerrainSettings Settings { get; private set;}
 		public List<GradientPresets.GradientKeyData> GradientPreset { get; private set;}
+		public Gradient Gradient { get; private set; }
 
 		// use when creating
 		public TerrainBuilder (int width, int height, int seed)
@@ -59,28 +60,33 @@ namespace WarWorldInfServer
 			NoiseModule = FileManager.LoadObject<IModule> (settings.moduleFile, true);;
 			_presetLoader = new GradiantPresetLoader (GameServer.Instance.AppDirectory + "GradientPresets/");
 			GradientPreset = _presetLoader.GetPreset (settings.preset);
+			Gradient = GradientPresets.CreateGradientServer (new List<GradientPresets.GradientKeyData>(GradientPreset));
 			LoadMap (settings.imageFile);
 		}
 
-		// use when loading
+		// use when loading. Never needs to be called.
 		public void Generate(){
 			Generate (NoiseModule, Settings.preset);
 		}
 
 		// use when creating
-		public void Generate(IModule module, string preset){
-			//_noiseModule = new Perlin ();
-			//((Perlin)_noiseModule).OctaveCount = 16;
-			//((Perlin)_noiseModule).Seed = _seed;
+		public bool Generate(IModule module, string preset){
 			NoiseModule = module;
 			GradientPreset = _presetLoader.GetPreset(preset);
-			NoiseMap = new Noise2D (Width, Height, NoiseModule);
-			//_noiseMap.GeneratePlanar (0, 4, 0, 2);
-			NoiseMap.GenerateSpherical (-90,90,-180,180);
-			Logger.Log ("terrain generated.");
-			ColorMap = NoiseMap.GetTexture (GradientPresets.CreateGradient(GradientPreset));
-			Logger.Log ("bitmap generated.");
-			Settings.preset = preset;
+			if (GradientPreset != null && module != null) {
+				NoiseMap = new Noise2D (Width, Height, NoiseModule);
+				//_noiseMap.GeneratePlanar (0, 4, 0, 2);
+				NoiseMap.GenerateSpherical (-90, 90, -180, 180);
+				Logger.Log ("terrain generated.");
+				Gradient = GradientPresets.CreateGradientServer (new List<GradientPresets.GradientKeyData>(GradientPreset));
+				ColorMap = NoiseMap.GetTexture (Gradient);
+				Logger.Log ("bitmap generated.");
+				Settings.preset = preset;
+				return true;
+			}
+			else
+				Logger.LogError("Generate: Gradient Preset is null!");
+			return false;
 		}
 
 		public void Save(string file){

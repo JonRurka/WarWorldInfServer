@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Xml.Serialization;
 using System.Drawing;
-using System.Drawing.Drawing2D;
 
 namespace LibNoise
 {

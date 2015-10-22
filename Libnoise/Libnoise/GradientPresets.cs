@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
-using WarWorldInfServer;
 
 namespace LibNoise
 {
@@ -11,18 +10,24 @@ namespace LibNoise
 	/// </summary>
 	public static class GradientPresets
 	{
-		public struct GradientKeyData
+		public class GradientKeyData
 		{
 			public bool isImage;
 			public GColor color;
 			public List<string> imageFiles;
+			public List<Color[]> images;
 			public float time;
+
+			public GradientKeyData(){
+
+			}
 
 			public GradientKeyData(GColor color, float time){
 				this.isImage = false;
 				this.color = color;
 				this.imageFiles = new List<string>();
 				this.time = time;
+				this.images = new List<Color[]>();
 			}
 
 			public GradientKeyData(List<string> files, float time){
@@ -30,6 +35,7 @@ namespace LibNoise
 				this.color = new GColor(0,0,0,0);
 				this.imageFiles = new List<string>(files);
 				this.time = time;
+				this.images = new List<Color[]>();
 			}
 		}
 
@@ -68,6 +74,8 @@ namespace LibNoise
 		/// </summary>
 		static GradientPresets()
 		{
+			TextureFiles = new Dictionary<string, Color[]> ();
+
 			// Grayscale gradient color keys
 			var grayscaleColorKeys = new List<GradientKey>
 			{
@@ -126,14 +134,14 @@ namespace LibNoise
 			_terrain.SetKeys(terrainColorKeys.ToArray());
 		}
 
-		public static Gradient CreateGradient(List<GradientKeyData> keyData){
+		public static Gradient CreateGradientServer(List<GradientKeyData> keyData){
 			List<GradientKey> keys = new List<GradientKey> ();
 			for (int i = 0; i < keyData.Count; i++) {
 				if (keyData[i].isImage){
 					List<Color[]> images = new List<Color[]>();
 					string[] files = keyData[i].imageFiles.ToArray();
 					for (int j = 0; j < files.Length; j++){
-						string file = GameServer.Instance.AppDirectory + files[j];
+						string file = AppDirectory + files[j];
 						if (File.Exists(file)){
 							Bitmap map =  new Bitmap (Bitmap.FromFile (file));
 							//Logger.Log("{0}: {1} {2}", file, map.Width.ToString(), map.Height.ToString());
@@ -143,16 +151,40 @@ namespace LibNoise
 									imgColors[x + y * map.Width] = map.GetPixel(x, y);
 								}
 							}
+							if (!TextureFiles.ContainsKey(files[j]))
+								TextureFiles.Add(files[j], imgColors);
+							keyData[i].images.Add(imgColors);
 							images.Add(imgColors);
 						}
-						else
-							Logger.LogError("Cannot find texture {0}", file);
 					}
 					keys.Add(new GradientKey(images, 10, 10, keyData[i].time));
 				}
 				else
 				{
 
+					keys.Add(new GradientKey(keyData[i].color, keyData[i].time));
+				}
+			}
+			return CreateGradient (keys);
+		}
+
+		public static Gradient CreateGradientClient(List<GradientKeyData> keyData){
+			List<GradientKey> keys = new List<GradientKey> ();
+			for (int i = 0; i < keyData.Count; i++) {
+				if (keyData[i].isImage){
+					List<Color[]> images = new List<Color[]>();
+					string[] files = keyData[i].imageFiles.ToArray();
+					for (int j = 0; j < files.Length; j++){
+						string file = files[j];
+						if (TextureFiles.ContainsKey(file)){
+							images.Add(TextureFiles[file]);
+						}
+					}
+					keys.Add(new GradientKey(images, 10, 10, keyData[i].time));
+				}
+				else
+				{
+					
 					keys.Add(new GradientKey(keyData[i].color, keyData[i].time));
 				}
 			}
@@ -208,6 +240,10 @@ namespace LibNoise
 		{
 			get { return _terrain; }
 		}
+
+		public static string AppDirectory;
+
+		public static Dictionary<string, Color[]> TextureFiles { get; private set; }
 		
 		#endregion
 	}

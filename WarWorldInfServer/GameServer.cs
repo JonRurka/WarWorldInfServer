@@ -2,10 +2,12 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Net;
+using System.Reflection;
 using Newtonsoft.Json;
 using LibNoise;
 using LibNoise.Models;
 using LibNoise.Modifiers;
+
 
 namespace WarWorldInfServer
 {
@@ -38,6 +40,7 @@ namespace WarWorldInfServer
 		{
 			_commandArgs = args;
 			_directory = Directory.GetCurrentDirectory () + "/";
+			GradientPresets.AppDirectory = _directory;
 			Running = true;
 			Instance = this;
 			_resetEvent = new ManualResetEvent(false);
@@ -60,6 +63,7 @@ namespace WarWorldInfServer
 		}
 
 		public void GameLoop(){
+			//Logger.Log (GetMonoRuntime ());
 			while (Running) {
 				_resetEvent.WaitOne (1);
 				try {
@@ -111,6 +115,27 @@ namespace WarWorldInfServer
 			TaskQueue.Close ();
 			Running = false;
 			_tickThread.Abort ();
+		}
+
+		private Boolean IsMonoRuntime()
+		{
+			return (Type.GetType("Mono.Runtime") != null);
+		}
+
+		private String GetMonoRuntime()
+		{
+			Type type = Type.GetType("Mono.Runtime");
+			
+			if (type != null)
+			{
+				MethodInfo displayName = type.GetMethod("GetDisplayName", BindingFlags.NonPublic | BindingFlags.Static);
+				if (displayName == null)
+					return "Unix/Linux + Mono";
+				else
+					return "Unix/Linux + Mono " + displayName.Invoke(null, null);
+			}
+			
+			return String.Empty;
 		}
 	}
 }

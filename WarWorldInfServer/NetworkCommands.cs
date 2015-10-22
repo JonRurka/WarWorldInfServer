@@ -22,12 +22,12 @@ namespace WarWorldInfServer
 
 		private void Ping_CMD(IPEndPoint endPoint, string args){
 			//Logger.Log ("Received ping from " + endPoint.Address.ToString ());
-			_server.Net.Send (endPoint.Address.ToString (), _server.Net.ClientPort, "pingsuccess#");
+			_server.Net.Send (endPoint, "pingsuccess" + NetServer.Delimiter);
 		}
 
 		private void GetSalt_CMD(IPEndPoint endPoint, string args){
 			string salt = _server.DB.GetSalt (args);
-			_server.Net.Send (endPoint.Address.ToString (), _server.Net.ClientPort, "completelogin#" + salt);
+			_server.Net.Send (endPoint, "completelogin" + NetServer.Delimiter + salt);
 		}
 		
 		private void Login_CMD(IPEndPoint endPoint, string args){
@@ -62,7 +62,7 @@ namespace WarWorldInfServer
 				}
 				
 				SerializationStructs.LoginResponse response = new SerializationStructs.LoginResponse (responseType, permission, sessionKey, message);
-				_server.Net.Send(endPoint.Address.ToString(), _server.Net.ClientPort, "loginresponse#" + JsonConvert.SerializeObject(response));
+				_server.Net.Send(endPoint, "loginresponse" + NetServer.Delimiter + JsonConvert.SerializeObject(response));
 			}
 			catch (Exception e){
 				Logger.LogError(e.StackTrace);
@@ -71,7 +71,7 @@ namespace WarWorldInfServer
 
 		private void Traffic_CMD(IPEndPoint endPoint, string args){
 			//Logger.Log ("traffic");
-			_server.Net.Send (endPoint.Address.ToString (), _server.Net.ClientPort, "traffic#" + args);
+			_server.Net.Send (endPoint, "traffic" + NetServer.Delimiter + args);
 		}
 
 		private void GetTerrain_CMD(IPEndPoint endPoint, string args){
@@ -80,27 +80,55 @@ namespace WarWorldInfServer
 			int width = 0;
 			int height = 0;
 			LibNoise.IModule module = null;
-			List<GradientPresets.GradientKeyData> preset = null;
+			List<GradientPresets.GradientKeyData> gradient = new List<GradientPresets.GradientKeyData>();
+			string[] TextureFiles = new string[0];
 			string message = string.Empty;
 
-			if (_server.Users.SessionKeyExists (args) && _server.WorldLoaded) {
-				if (_server.Users.SessionKeyExists (args)){
+			if (_server.WorldLoaded) {
+				if (_server.Users.SessionKeyExists (args)) {
 					TerrainBuilder builder = _server.Worlds.CurrentWorld.Terrain;
 					seed = builder.Seed;
 					width = builder.Width;
 					height = builder.Height;
 					module = builder.NoiseModule;
-					preset = builder.GradientPreset;
+					gradient = new List<GradientPresets.GradientKeyData>(builder.GradientPreset);
+					TextureFiles = new List<string> (GradientPresets.TextureFiles.Keys).ToArray ();
 					message = "success";
-				}
-				else
+				} else
 					message = "Invalid session key";
-			} else
+			} else {
 				message = "World not loaded";
+			}
 
-			SerializationStructs.MapData data = new SerializationStructs.MapData (responseType, seed, width, height, module, preset, message);
-			_server.Net.Send(endPoint.Address.ToString (), _server.Net.ClientPort, "setterraindata#" + JsonConvert.SerializeObject(
-				data, new JsonSerializerSettings{TypeNameHandling = TypeNameHandling.All}));
+			// make sure images are cleared. They will be sent seperatly.
+			for (int i = 0; i < gradient.Count; i++) {
+				gradient[i].images.Clear(); 
+			}
+
+			SerializationStructs.MapData data = new SerializationStructs.MapData (responseType, seed, width, height, gradient, TextureFiles, message);
+			string sendStr = JsonConvert.SerializeObject (
+				data, Formatting.Indented);
+			//Logger.Print (sendStr.Length * sizeof(char));
+			 //Logger.PrintNoFormat(sendStr);
+			string moduleStr = JsonConvert.SerializeObject (module, new JsonSerializerSettings{TypeNameHandling = TypeNameHandling.All});
+			_server.Net.Send (endPoint, "setterrainmodule" + NetServer.Delimiter + moduleStr);
+
+			if (sendStr.Length * sizeof(char) <= 65536)
+				_server.Net.Send (endPoint, "setterraindata" + NetServer.Delimiter + sendStr);
+			else {
+				Logger.Log ("map data is to big to send.");
+				Logger.PrintNoFormat(sendStr);
+			}
+
+			foreach (string imageName in GradientPresets.TextureFiles.Keys) {
+				List<System.Drawing.Color> image = new List<System.Drawing.Color>(GradientPresets.TextureFiles[imageName]);
+				Libnoise.SerializationStructs.ImageFileData imageStruct = new Libnoise.SerializationStructs.ImageFileData(imageName, image);
+				string imageStr = JsonConvert.SerializeObject(imageStruct, Formatting.Indented, new JsonSerializerSettings{TypeNameHandling = TypeNameHandling.All});
+				if (imageStr.Length * sizeof(char) <= 65536)
+					_server.Net.Send(endPoint, "setimage" + NetServer.Delimiter + imageStr);
+				else
+					Logger.Log("{0} is to big to send.", imageName);
+			}
 		}
 	}
 }

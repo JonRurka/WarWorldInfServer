@@ -29,7 +29,8 @@ namespace WarWorldInfServer
 		 */ 
 
 		public delegate void CMD(IPEndPoint endPoint, string data);
-
+		public const char Delimiter = '★';
+		private const char endStr = '❤';
 		private UdpClient _client;
 		private bool _run;
 		private Stopwatch _watch;
@@ -136,19 +137,26 @@ namespace WarWorldInfServer
 		
 		public void Send(User user, string data)
 		{
-			byte[] sendBytes = Encoding.ASCII.GetBytes(data);
-			Send(user.Ip, ClientPort, data);
+			Send(user.Ip, ClientPort, Encoding.Unicode.GetBytes(data + endStr));
 		}
 
 		public void Send(string ip, int port, string data){
-			Send (ip, port, Encoding.ASCII.GetBytes (data + "$"));
+			Send (ip, port, Encoding.Unicode.GetBytes (data + endStr));
 		}
 
 		public void Send(string ip, int port, byte[] data){
+			IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(ip), port);
+			Send (endPoint, data);
+		}
+
+		public void Send(IPEndPoint EndPoint, string data){
+			Send (EndPoint, Encoding.Unicode.GetBytes (data + endStr));
+		}
+
+		public void Send(IPEndPoint endPoint, byte[] data){
 			if (_client != null) {
 				_sentBytes += data.Length;
 				_sent ++;
-				IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(ip), port);
 				_client.Send(data, data.Length, endPoint);
 			}
 		}
@@ -195,9 +203,9 @@ namespace WarWorldInfServer
 		private void ProcessData(IPEndPoint endpoint, byte[] data){
 			_receivedBytes += data.Length;
 			_received++;
-			string inString = Encoding.ASCII.GetString (data);
-			if (inString.Contains ("#") && inString.Contains ("$")) {
-				string[] parts = inString.Substring(0, inString.IndexOf('$')).Split('#');
+			string inString = Encoding.Unicode.GetString (data);
+			if (inString.Contains (Delimiter) && inString.Contains (endStr)) {
+				string[] parts = inString.Substring(0, inString.IndexOf(endStr)).Split(Delimiter);
 				if (parts.Length == 2){
 					string cmd = parts[0];
 					string args = parts[1];

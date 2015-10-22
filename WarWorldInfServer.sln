@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WarWorldInfServer", "WarWorldInfServer\WarWorldInfServer.csproj", "{A1F6F3E1-1E3A-4C59-933B-B8830A38DBF2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Libnoise", "Libnoise\Libnoise.csproj", "{E5257F41-AED2-4AFA-A998-177DF455DFDA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -13,6 +15,10 @@ Global
 		{A1F6F3E1-1E3A-4C59-933B-B8830A38DBF2}.Debug|x86.Build.0 = Debug|x86
 		{A1F6F3E1-1E3A-4C59-933B-B8830A38DBF2}.Release|x86.ActiveCfg = Release|x86
 		{A1F6F3E1-1E3A-4C59-933B-B8830A38DBF2}.Release|x86.Build.0 = Release|x86
+		{E5257F41-AED2-4AFA-A998-177DF455DFDA}.Debug|x86.ActiveCfg = Debug|x86
+		{E5257F41-AED2-4AFA-A998-177DF455DFDA}.Debug|x86.Build.0 = Debug|x86
+		{E5257F41-AED2-4AFA-A998-177DF455DFDA}.Release|x86.ActiveCfg = Release|x86
+		{E5257F41-AED2-4AFA-A998-177DF455DFDA}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = WarWorldInfServer\WarWorldInfServer.csproj

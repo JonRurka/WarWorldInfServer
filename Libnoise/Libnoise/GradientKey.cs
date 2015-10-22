@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using WarWorldInfServer;
 
 namespace LibNoise
 {
@@ -36,17 +35,14 @@ namespace LibNoise
 
 		public Color GetPixel(int index, int x, int y){
 			if (index < 0) {
-				Logger.LogError ("index less than 0: {0}", index.ToString ());
 				return Color.Black;
 			}
 
 			if (x < 0) {
-				Logger.LogError ("x less than 0: {0}", x.ToString ());
 				return Color.Black;
 			}
 
 			if (y < 0) {
-				Logger.LogError ("y less than 0: {0}", y.ToString ());
 				return Color.Black;
 			}
 			return colors[index] [x + y * width];

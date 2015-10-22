@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 using LibNoise;
 
 namespace WarWorldInfServer
@@ -62,36 +63,42 @@ namespace WarWorldInfServer
 		}
 
 		public World CreateNewWorld(string worldName){
-			WorldDirectory = _worldManager.MainWorldDirectory + worldName + "/";
-			if (!Directory.Exists (WorldDirectory))
-				Directory.CreateDirectory (WorldDirectory);
-			_worldManager.AddWorldDirectory (worldName, WorldDirectory);
-
-			//TODO: create config and save files.
-			SettingsLoader settings = GameServer.Instance.Settings;
-
-			IModule module = new Perlin ();
-			((Perlin)module).OctaveCount = 16;
-			((Perlin)module).Seed = settings.TerrainSeed;
-
-			Terrain = new TerrainBuilder (settings.TerrainWidth, settings.TerrainHeight, settings.TerrainSeed);
-			Terrain.Generate (module, settings.TerrainPreset);
-			Terrain.Save(WorldDirectory + settings.TerrainImageFile);
-			Terrain.SaveModule(WorldDirectory + settings.TerrainModuleFile);
-
-			WorldName = worldName;
-			WorldConfigSave worldSave = new WorldConfigSave ();
-			WorldStartTime = new Time (0, 0, 0, 0, 0, 0, settings.SecondsInTicks);
-			worldSave.version = GameServer.Instance.Version;
-			worldSave.time = WorldStartTime;
-			worldSave.terrain = Terrain.Settings;
-			FileManager.SaveConfigFile(WorldDirectory + settings.WorldSaveFile, worldSave, false);
-
-			GameServer.Instance.Users.Save(WorldDirectory + "Users/");
-
-			Logger.Log ("World \"{0}\" created.", worldName);
-			GameServer.Instance.StartWorld (this);
-
+			string stage = "stage1";
+			try {
+				WorldDirectory = _worldManager.MainWorldDirectory + worldName + "/";
+				if (!Directory.Exists (WorldDirectory))
+					Directory.CreateDirectory (WorldDirectory);
+				_worldManager.AddWorldDirectory (worldName, WorldDirectory);
+				
+				//TODO: create config and save files.
+				SettingsLoader settings = GameServer.Instance.Settings;
+				
+				IModule module = new Perlin ();
+				((Perlin)module).OctaveCount = 16;
+				((Perlin)module).Seed = settings.TerrainSeed;
+				Terrain = new TerrainBuilder (settings.TerrainWidth, settings.TerrainHeight, settings.TerrainSeed);
+				Terrain.Generate (module, settings.TerrainPreset);
+				Terrain.Save(WorldDirectory + settings.TerrainImageFile);
+				Terrain.SaveModule(WorldDirectory + settings.TerrainModuleFile);
+				WorldName = worldName;
+				WorldConfigSave worldSave = new WorldConfigSave ();
+				WorldStartTime = new Time (0, 0, 0, 0, 0, 0, settings.SecondsInTicks);
+				worldSave.version = GameServer.Instance.Version;
+				worldSave.time = WorldStartTime;
+				worldSave.terrain = Terrain.Settings;
+				FileManager.SaveConfigFile(WorldDirectory + settings.WorldSaveFile, worldSave, false);
+				GameServer.Instance.Users.Save(WorldDirectory + "Users/");
+				
+				Logger.Log ("World \"{0}\" created.", worldName);
+				GameServer.Instance.StartWorld (this);
+			}
+			catch (JsonSerializationException e){
+				Logger.LogError("json serialization failed: {0}", stage);
+				Logger.LogError(e.StackTrace);
+			}
+			catch (Exception e){
+				Logger.LogError("{0}: {1}\n{2}", e.GetType(), e.Message, e.StackTrace);
+			}
 			return this;
 		}
 

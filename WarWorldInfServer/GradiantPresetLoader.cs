@@ -36,8 +36,10 @@ namespace WarWorldInfServer
 		}
 
 		public List<GradientPresets.GradientKeyData> GetPreset(string name){
-			if (_presets.ContainsKey (name))
-				return _presets [name];
+			if (_presets.ContainsKey (name)) {
+				List<GradientPresets.GradientKeyData> preset = _presets [name];
+				return preset;
+			}
 			return null;
 		}
 	}

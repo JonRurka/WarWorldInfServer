@@ -93,7 +93,7 @@ namespace WarWorldInfServer
 				}
 			}
 			catch (Exception e){
-				Logger.LogError("{0}: {1}\n{1}", e.InnerException.GetType(), e.Message, e.StackTrace);
+				Logger.LogError("{0}\n{1}", e.Message, e.StackTrace);
 			}
 		}
 
@@ -112,15 +112,25 @@ namespace WarWorldInfServer
 		}
 
 		private object Create_CMD(params string[] args){
-			if (args.Length == 2){
-				_server.Worlds.CreateWorld(args[1]);
+			try {
+				if (args.Length == 2){
+					_server.Worlds.CreateWorld(args[1]);
+				}
+			}
+			catch(Exception e){
+				Logger.LogError("{0}\n{1}", e.Message, e.StackTrace);
 			}
 			return string.Empty;
 		}
 
 		private object Load_CMD(params string[] args){
-			if (args.Length == 2){
-				_server.Worlds.LoadWorld(args[1]);
+			try {
+				if (args.Length == 2){
+					_server.Worlds.LoadWorld(args[1]);
+				}
+			}
+			catch(Exception e){
+				Logger.LogError("{0}: {1}\n{2}", e.InnerException.GetType(), e.Message, e.StackTrace);
 			}
 			return string.Empty;
 		}
@@ -179,9 +189,7 @@ namespace WarWorldInfServer
 			}
 			TaskQueue.QeueAsync("terrain preview", ()=>{
 				try {
-					TerrainBuilder builder = new TerrainBuilder(settings.TerrainWidth, settings.TerrainHeight, seed);
-					
-					/*List<GradientPresets.GradientKeyData> keys = new List<GradientPresets.GradientKeyData>();
+					List<GradientPresets.GradientKeyData> keys = new List<GradientPresets.GradientKeyData>();
 					
 					keys.Add(new GradientPresets.GradientKeyData(new GradientPresets.GColor(255, 0, 0, 128), 0));
 					keys.Add(new GradientPresets.GradientKeyData(new GradientPresets.GColor(255, 32, 64, 128), 0.4f));
@@ -192,15 +200,16 @@ namespace WarWorldInfServer
 					keys.Add(new GradientPresets.GradientKeyData(new List<string> {"terrainTextures/grass1.png", "terrainTextures/grass2.png", "terrainTextures/trees2.png"}, 0.60f));
 					keys.Add(new GradientPresets.GradientKeyData(new List<string> {"terrainTextures/grass1.png", "terrainTextures/grass2.png"}, 0.90f));
 					keys.Add(new GradientPresets.GradientKeyData(new List<string> {"terrainTextures/grass1.png", "terrainTextures/grass2.png"}, 1f));
-					GradientPresets.CreateGradient(keys);
-					GradiantPresetLoader.PresetSerializer saveObj = new GradiantPresetLoader.PresetSerializer("terrain", keys);
-					FileManager.SaveConfigFile(GameServer.Instance.AppDirectory + "GradientPresets/terrain.json", saveObj, false);
-					return;*/
+					//GradientPresets.CreateGradient(keys);
+					GradiantPresetLoader.PresetSerializer saveObj = new GradiantPresetLoader.PresetSerializer(_server.Settings.TerrainPreset, keys);
+					FileManager.SaveConfigFile(GameServer.Instance.AppDirectory + "GradientPresets/"+_server.Settings.TerrainPreset+".json", saveObj, false);
+					//return;
 					IModule module = new Perlin ();
 					((Perlin)module).OctaveCount = 16;
 					((Perlin)module).Seed = settings.TerrainSeed;
 
-					builder.Generate (module, "terrain");
+					TerrainBuilder builder = new TerrainBuilder(settings.TerrainWidth, settings.TerrainHeight, seed);
+					builder.Generate (module, _server.Settings.TerrainPreset);
 					System.Drawing.Bitmap map = builder.GetBitmap();
 					Form imageForm = new Form ();
 					imageForm.Text = "Seed preview: " + seed;
