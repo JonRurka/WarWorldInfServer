@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 
 namespace LibNoise
 {
@@ -34,17 +33,17 @@ namespace LibNoise
 		}
 
 		public Color GetPixel(int index, int x, int y){
-			if (index < 0) {
-				return Color.Black;
+			if (index < 0 || index >= colors.Count) {
+				return new Color(0,0,0,0);
 			}
 
-			if (x < 0) {
-				return Color.Black;
-			}
+			if (x < 0 || x >= 10) {
+                return new Color(0, 0, 0, 0);
+            }
 
-			if (y < 0) {
-				return Color.Black;
-			}
+			if (y < 0 || y >= 10) {
+                return new Color(0, 0, 0, 0);
+            }
 			return colors[index] [x + y * width];
 		}
 	}

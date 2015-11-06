@@ -22,8 +22,24 @@ namespace WarWorldInfServer
 		private NetworkCommands _netCommands;
 	  
 		public static GameServer Instance{ get; private set; }
+        public static char sepChar {  get { return Path.DirectorySeparatorChar; } }
+        public static bool isMono { get { return (Type.GetType("Mono.Runtime") != null); } }
 
-		public string Version{ get { return "0.0.1-dev"; } }
+
+        /// <summary>
+        /// version format: first.second.third
+        /// first is incremented if save is no longer compatible.
+        /// second is incremented if save needs to be converted.
+        /// third is incremented if save is completely compatible.
+        /// 
+        /// version must be incremented each release.
+        /// </summary>
+        public string Version{ get { return "0.0.1-dev"; } }
+        /// <summary>
+        /// Increment when protocal becomes none-backwards compatible
+        /// with client. 
+        /// </summary>
+        public string NetProtocalVersion { get { return "0"; } }
 		public string[] CommandArgs{ get { return _commandArgs; } }
 		public string AppDirectory { get { return _directory; } }
 		public bool Running { get; private set; }
@@ -35,11 +51,14 @@ namespace WarWorldInfServer
 		public UserManager Users { get; private set; }
 		public NetServer Net { get; private set; }
 		public DataBase DB { get; private set; }
+        public AutoSave autoSaver { get; private set; }
+        public WebSockServer SockServ { get; private set; }
+        public FrameCounter FCounter { get; private set; }
 
 		public GameServer (string[] args)
 		{
 			_commandArgs = args;
-			_directory = Directory.GetCurrentDirectory () + "/";
+			_directory = Directory.GetCurrentDirectory () + sepChar;
 			GradientPresets.AppDirectory = _directory;
 			Running = true;
 			Instance = this;
@@ -47,17 +66,22 @@ namespace WarWorldInfServer
 		}
 
 		public void Run(){
-			Settings = new SettingsLoader (_directory + "Settings.ini");
+            Logger.Log("War World Infinity Server Version {0}", Version);
+            Settings = new SettingsLoader (_directory + "Settings.ini");
 			_taskQueue = new TaskQueue ();
 			CommandExec = new CommandExecuter ();
-			Logger.Log ("War World Infinity Server Version {0}", Version);
-			Net = new NetServer (Settings.ServerPort, Settings.ClientPort);
-			_netCommands = new NetworkCommands();
+            SocketPolicyServer.LoadAll();
+            SockServ = new WebSockServer(Settings.ServerPort);
+            //Net = new NetServer (Settings.ServerPort, Settings.ClientPort);
+            //SockServ = new WebSockServer(Settings.ServerPort);
+            _netCommands = new NetworkCommands();
 			DB = new DataBase (Settings.DbServer, Settings.Database);
 			DB.Connect (Settings.DbUsername, Settings.DbPassword);
 			Worlds = new WorldManager (this);
 			Users = new UserManager ();
-			_tickThread = new Thread (CommandExec.StartCommandLoop);
+            autoSaver = new AutoSave();
+            FCounter = new FrameCounter();
+            _tickThread = new Thread (CommandExec.StartCommandLoop);
 			_tickThread.Start ();
 			GameLoop ();
 		}
@@ -65,22 +89,21 @@ namespace WarWorldInfServer
 		public void GameLoop(){
 			//Logger.Log (GetMonoRuntime ());
 			while (Running) {
-				_resetEvent.WaitOne (1);
-				try {
+                _resetEvent.WaitOne (1);
+                FCounter.Update();
+                try {
 					if (WorldLoaded){
 						if (GameTime.Update()){ // every second
-							if (GameTime.Seconds % Settings.AutoSaveInterval == 0)
-								Save();
 							if (GameTime.TickIncrease){ // update when enough seconds pass to increase tick.
 								Logger.Log("Updating world. Tick: {0}", GameTime.Tick.ToString());
 								Save();
 							}
 						}
 					}
-					Net.Update();
+					//Net.Update();
 					_taskQueue.Update(); // run items queued during frame.
 					Logger.Update(); // print items sent to log during frame.
-				}
+                }
 				catch (Exception e){
 					Logger.LogError("{0}: {1}\n{1}", e.InnerException.GetType(), e.Message, e.StackTrace);
 				}
@@ -90,14 +113,20 @@ namespace WarWorldInfServer
 
 
 		public void CreatePlayer(string username, string password, string permission, string email){
-			string salt = HashHelper.RandomKey(32);
-			DB.AddNewPlayer (username, HashHelper.HashPasswordFull(password, salt), salt, permission, email);
-			Logger.Log ("User {0} created as {1}.", username, permission);
+            User.PermissionLevel level;
+            if (Enum.TryParse<User.PermissionLevel>(permission, true, out level)) {
+                string salt = HashHelper.RandomKey(32);
+                DB.AddNewPlayer(username, HashHelper.HashPasswordFull(password, salt), salt, permission, email);
+                Logger.Log("User {0} created as {1}.", username, permission);
+            }
+            else
+                Logger.LogError("Invalid permission level.");
 		}
 
 		public void StartWorld(World world){
 			GameTime = new GameTimer (world.WorldStartTime);
-			WorldLoaded = true;
+            autoSaver.Start(Save, Settings.AutoSaveInterval);
+            WorldLoaded = true;
 			Logger.Log ("World \"{0}\" started.", world.WorldName);
 		}
 
@@ -114,29 +143,14 @@ namespace WarWorldInfServer
 			Net.Close();
 			TaskQueue.Close ();
 			Running = false;
-			_tickThread.Abort ();
+            autoSaver.Stop();
+            _tickThread.Abort ();
 		}
 
-		private Boolean IsMonoRuntime()
-		{
-			return (Type.GetType("Mono.Runtime") != null);
-		}
-
-		private String GetMonoRuntime()
-		{
-			Type type = Type.GetType("Mono.Runtime");
-			
-			if (type != null)
-			{
-				MethodInfo displayName = type.GetMethod("GetDisplayName", BindingFlags.NonPublic | BindingFlags.Static);
-				if (displayName == null)
-					return "Unix/Linux + Mono";
-				else
-					return "Unix/Linux + Mono " + displayName.Invoke(null, null);
-			}
-			
-			return String.Empty;
-		}
+        private bool IsMonoRuntime()
+        {
+            return (Type.GetType("Mono.Runtime") != null);
+        }
 	}
 }
 

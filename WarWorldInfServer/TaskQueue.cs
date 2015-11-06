@@ -47,6 +47,18 @@ namespace WarWorldInfServer
 			}
 		}
 
+        public static void Close(string thread) {
+            if (_instance != null && _instance._asyncTasks != null) {
+                lock (_instance._asyncTasks) {
+                    if (_instance._asyncTasks.ContainsKey(thread)) {
+                        _instance._asyncTasks[thread].Close();
+                        _instance._asyncTasks.Remove(thread);
+                    }
+                }
+            }
+
+        }
+
 		public static void QueueMain(Action action) {
 			if (_instance != null && _instance._actions != null) {
 				lock (_instance._actions){

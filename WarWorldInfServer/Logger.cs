@@ -7,7 +7,8 @@ namespace WarWorldInfServer
 {
 	public static class Logger
 	{
-		private static bool _letterTyped = false;
+        private static char sepChar { get { return Path.DirectorySeparatorChar; } }
+        private static bool _letterTyped = false;
 		private static string _inputStr = string.Empty;
 		private static string _logFile = string.Empty;
 		public static string LogFile { get { return _logFile; } }
@@ -64,13 +65,17 @@ namespace WarWorldInfServer
 		}
 
 		public static void LogToFile(object message){
-			if (!Directory.Exists (Directory.GetCurrentDirectory () + "/SystemLogs/"))
-				Directory.CreateDirectory (Directory.GetCurrentDirectory () + "/SystemLogs/");
+			if (!Directory.Exists (Directory.GetCurrentDirectory () + sepChar + "SystemLogs" + sepChar))
+				Directory.CreateDirectory (Directory.GetCurrentDirectory () + sepChar + "SystemLogs" + sepChar);
 
 			if (_logFile == string.Empty) {
-				int fileCount = Directory.GetFiles(Directory.GetCurrentDirectory () + "/SystemLogs/").Length;
-				_logFile = Directory.GetCurrentDirectory () + "/SystemLogs/" + fileCount + ". " + GameTimer.GetDateTime ().Replace ("/", "-") + ".txt";
-			}
+				int fileCount = Directory.GetFiles(Directory.GetCurrentDirectory () + sepChar + "SystemLogs" + sepChar).Length;
+                if (GameServer.isMono)
+				    _logFile = Directory.GetCurrentDirectory () + sepChar + "SystemLogs" + sepChar + fileCount + "_" + GameTimer.GetDateTime ().Replace ("/", "-").Replace(" ", "_") + ".txt";
+                else
+                    _logFile = Directory.GetCurrentDirectory() + sepChar + "SystemLogs" + sepChar + fileCount + ".txt";
+            }
+            //Logger.Log(_logFile);
 			StreamWriter writer = new StreamWriter (_logFile, true);
 			writer.WriteLine(message.ToString());
 			writer.Close ();

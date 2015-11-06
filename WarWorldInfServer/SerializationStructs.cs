@@ -1,20 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using LibNoise;
 
 // TODO: put this in own project.
 public class SerializationStructs
 {
-	public enum ResponseType{
+	/*public enum ResponseType{
 		Failed,
 		Successfull,
-	}
-
-	// temp color transfer.
-	public struct TColor
-	{
-
 	}
 	
 	// Structs sent to server from client
@@ -76,7 +69,7 @@ public class SerializationStructs
 			this.file = file;
 			this.image = image;
 		}
-	}
+	}*/
 }
 
 

@@ -6,7 +6,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Diagnostics;
-using System.Windows.Forms;
 using System.Drawing;
 
 namespace WarWorldInfServer
@@ -38,10 +37,10 @@ namespace WarWorldInfServer
 		private int _sentBytes;
 		private int _received;
 		private int _sent;
-		private Label _downLabel;
-		private Label _upLabel;
-		private Label _receivedLabel;
-		private Label _sentLabel;
+		/*private System.Windows.Forms.Label _downLabel;
+		private System.Windows.Forms.Label _upLabel;
+		private System.Windows.Forms.Label _receivedLabel;
+		private System.Windows.Forms.Label _sentLabel;*/
 
 
 		public int ServerPort { get; private set; }
@@ -62,10 +61,10 @@ namespace WarWorldInfServer
 			_watch = new Stopwatch ();
 			_watch.Start ();
 			TaskQueue.QeueAsync("NetThread", ()=> Receive());
-			_downLabel = new Label (){Text = "down: " + GetDataRate(DownBps), Location = new Point(0, 0), Size = new Size(200, 20)};
-			_upLabel = new Label (){Text = "up: " + GetDataRate(UpBps), Location = new Point(0, 20), Size = new Size(200, 20)};
-			_receivedLabel = new Label (){Text = "received: " + ReceivedPs + " /s", Location = new Point(0, 40), Size = new Size(200, 20)};
-			_sentLabel = new Label (){Text = "sent: " + SentPs + " /s", Location = new Point(0, 60), Size = new Size(200, 20)};
+			/*_downLabel = new System.Windows.Forms.Label (){Text = "down: " + GetDataRate(DownBps), Location = new Point(0, 0), Size = new Size(200, 20)};
+			_upLabel = new System.Windows.Forms.Label (){Text = "up: " + GetDataRate(UpBps), Location = new Point(0, 20), Size = new Size(200, 20)};
+			_receivedLabel = new System.Windows.Forms.Label (){Text = "received: " + ReceivedPs + " /s", Location = new Point(0, 40), Size = new Size(200, 20)};
+			_sentLabel = new System.Windows.Forms.Label (){Text = "sent: " + SentPs + " /s", Location = new Point(0, 60), Size = new Size(200, 20)};*/
 		}
 
 		public void Update(){
@@ -83,12 +82,12 @@ namespace WarWorldInfServer
 				SentPs = _sent;
 				_sent = 0;
 
-				if (_downLabel != null && _upLabel != null) {
+				/*if (_downLabel != null && _upLabel != null) {
 					_downLabel.Text = "down: " + GetDataRate(DownBps);
 					_upLabel.Text = "up: " + GetDataRate(UpBps);
 					_receivedLabel.Text = "received: " + ReceivedPs + " /s";
 					_sentLabel.Text = "sent: " + SentPs + " /s";
-				}
+				}*/
 			}
 		}
 
@@ -108,15 +107,15 @@ namespace WarWorldInfServer
 		}
 
 		public void DisplayDataRate(){
-			TaskQueue.QeueAsync ("rateForm", () => {
-				Form form = new Form ();
-				Rectangle rect = Screen.FromControl(form).Bounds;
+			/*TaskQueue.QeueAsync ("rateForm", () => {
+                System.Windows.Forms.Form form = new System.Windows.Forms.Form ();
+				Rectangle rect = System.Windows.Forms.Screen.FromControl(form).Bounds;
 				//Logger.Log("{0}, {1}, {2}, {3}", rect.Left, rect.Top, rect.Width, rect.Height);
-				form.StartPosition = FormStartPosition.CenterScreen;
+				form.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 				//form.Location = new Point(rect.Left, rect.Top);
 				form.Width = 200;
 				form.Height = 100;
-				form.FormBorderStyle = FormBorderStyle.FixedDialog;
+				form.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
 				form.Controls.Add(_downLabel);
 				form.Controls.Add(_upLabel);
 				form.Controls.Add(_receivedLabel);
@@ -124,7 +123,7 @@ namespace WarWorldInfServer
 				form.ShowDialog();
 				form.Close();
 				form.Dispose();
-			});
+			});*/
 		}
 
 		public void SendAll(string data)

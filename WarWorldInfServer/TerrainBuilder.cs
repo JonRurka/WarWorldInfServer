@@ -36,7 +36,7 @@ namespace WarWorldInfServer
 		public int Height { get; private set; }
 		public IModule NoiseModule { get; private set; }
 		public Noise2D NoiseMap { get; private set; }
-		public Color[] ColorMap { get; private set; }
+		public System.Drawing.Color[] ColorMap { get; private set; }
 		public TerrainSettings Settings { get; private set;}
 		public List<GradientPresets.GradientKeyData> GradientPreset { get; private set;}
 		public Gradient Gradient { get; private set; }
@@ -47,7 +47,7 @@ namespace WarWorldInfServer
 			Seed = seed;
 			Width = width;
 			Height = height;
-			_presetLoader = new GradiantPresetLoader (GameServer.Instance.AppDirectory + "GradientPresets/");
+			_presetLoader = new GradiantPresetLoader (GameServer.Instance.AppDirectory + "GradientPresets" + GameServer.sepChar);
 			Settings = new TerrainSettings (width, height, seed, string.Empty, string.Empty, string.Empty);
 		}
 
@@ -58,9 +58,9 @@ namespace WarWorldInfServer
 			Width = settings.width;
 			Height = settings.height;
 			NoiseModule = FileManager.LoadObject<IModule> (settings.moduleFile, true);;
-			_presetLoader = new GradiantPresetLoader (GameServer.Instance.AppDirectory + "GradientPresets/");
+			_presetLoader = new GradiantPresetLoader (GameServer.Instance.AppDirectory + "GradientPresets" + GameServer.sepChar);
 			GradientPreset = _presetLoader.GetPreset (settings.preset);
-			Gradient = GradientPresets.CreateGradientServer (new List<GradientPresets.GradientKeyData>(GradientPreset));
+			Gradient = GradientCreator.CreateGradientServer (new List<GradientPresets.GradientKeyData>(GradientPreset));
 			LoadMap (settings.imageFile);
 		}
 
@@ -78,8 +78,8 @@ namespace WarWorldInfServer
 				//_noiseMap.GeneratePlanar (0, 4, 0, 2);
 				NoiseMap.GenerateSpherical (-90, 90, -180, 180);
 				Logger.Log ("terrain generated.");
-				Gradient = GradientPresets.CreateGradientServer (new List<GradientPresets.GradientKeyData>(GradientPreset));
-				ColorMap = NoiseMap.GetTexture (Gradient);
+				Gradient = GradientCreator.CreateGradientServer (new List<GradientPresets.GradientKeyData>(GradientPreset));
+				ColorMap = ColorConvert.SysColList(NoiseMap.GetTexture (Gradient));
 				Logger.Log ("bitmap generated.");
 				Settings.preset = preset;
 				return true;
@@ -114,7 +114,7 @@ namespace WarWorldInfServer
 			Width = img.Width;
 			Height = img.Height;
 			Bitmap bmap = new Bitmap (img, img.Width, img.Height);
-			ColorMap = new Color[Width * Height];
+			ColorMap = new System.Drawing.Color[Width * Height];
 			for (int x = 0; x < Width; x++) {
 				for (int y = 0; y < Height; y++) {
 					ColorMap[x + y * Width] = bmap.GetPixel(x, y);
@@ -123,7 +123,7 @@ namespace WarWorldInfServer
 			img.Dispose ();
 		}
 
-		public Color GetColor(int x, int y){
+		public System.Drawing.Color GetColor(int x, int y){
 			return ColorMap [x + y * Width];
 		}
 
@@ -131,7 +131,7 @@ namespace WarWorldInfServer
 			return GetBitmap (ColorMap);
 		}
 
-		public Bitmap GetBitmap(Color[] colors){
+		public Bitmap GetBitmap(System.Drawing.Color[] colors){
 			Bitmap map = new Bitmap (Width, Height);
 			for (int x = 0; x < Width; x++) {
 				for (int y = 0; y < Height; y++) {
@@ -141,7 +141,7 @@ namespace WarWorldInfServer
 			return map;
 		}
 
-		private string GetColorString(Color[] colors){
+		private string GetColorString(System.Drawing.Color[] colors){
 			string colorStr = string.Empty;
 			for (int i = 0; i < ColorMap.Length; i++) {
 				colorStr += colors[i].R + "," + colors[i].G + "," + colors[i].B + "&";
@@ -155,10 +155,10 @@ namespace WarWorldInfServer
 			stream.Close ();
 		}
 		
-		private Color[] GetColorsFromString(string colorStr)
+		private System.Drawing.Color[] GetColorsFromString(string colorStr)
 		{
 			string[] colors = colorStr.Split('&');
-			Color[] colorArr = new Color[colors.Length];
+            System.Drawing.Color[] colorArr = new System.Drawing.Color[colors.Length];
 			for (int x = 0; x < Width; x++)
 			{
 				for (int y = 0; y < Height; y++)
@@ -167,13 +167,13 @@ namespace WarWorldInfServer
 					int R = int.Parse(RGB[0]);
 					int G = int.Parse(RGB[1]);
 					int B = int.Parse(RGB[2]);
-					colorArr[x + y * Width] = Color.FromArgb(255, R, G, B);
+					colorArr[x + y * Width] = System.Drawing.Color.FromArgb(255, R, G, B);
 				}
 			}
 			return colorArr;
 		}
 		
-		private void SaveBmp(Color[] colors, string file){
+		private void SaveBmp(System.Drawing.Color[] colors, string file){
 			Bitmap map = GetBitmap (colors);
 			map.Save(file);
 			map.Dispose();

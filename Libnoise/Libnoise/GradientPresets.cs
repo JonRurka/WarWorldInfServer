@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
 
 namespace LibNoise
@@ -13,7 +12,7 @@ namespace LibNoise
 		public class GradientKeyData
 		{
 			public bool isImage;
-			public GColor color;
+			public Color color;
 			public List<string> imageFiles;
 			public List<Color[]> images;
 			public float time;
@@ -22,7 +21,7 @@ namespace LibNoise
 
 			}
 
-			public GradientKeyData(GColor color, float time){
+			public GradientKeyData(Color color, float time){
 				this.isImage = false;
 				this.color = color;
 				this.imageFiles = new List<string>();
@@ -32,14 +31,14 @@ namespace LibNoise
 
 			public GradientKeyData(List<string> files, float time){
 				this.isImage = true;
-				this.color = new GColor(0,0,0,0);
+				this.color = new Color(0,0,0,0);
 				this.imageFiles = new List<string>(files);
 				this.time = time;
 				this.images = new List<Color[]>();
 			}
 		}
 
-		public struct GColor{
+		/*public struct GColor{
 			public byte A;
 			public byte R;
 			public byte G;
@@ -53,9 +52,9 @@ namespace LibNoise
 			}
 
 			public static implicit operator Color(GColor original){
-				return Color.FromArgb (original.A, original.R, original.G, original.B);
+				return new Color (original.A, original.R, original.G, original.B);
 			}
-		}
+		}*/
 
 		#region Fields
 		
@@ -74,30 +73,28 @@ namespace LibNoise
 		/// </summary>
 		static GradientPresets()
 		{
-			TextureFiles = new Dictionary<string, Color[]> ();
-
 			// Grayscale gradient color keys
 			var grayscaleColorKeys = new List<GradientKey>
 			{
-				new GradientKey(Color.Black, 0),
-				new GradientKey(Color.White, 1)
+				new GradientKey(new Color(1, 0, 0, 0), 0),
+				new GradientKey(new Color(1,1,1,1), 1)
 			};
 			
 			// RGB gradient color keys
 			var rgbColorKeys = new List<GradientKey>
 			{
-				new GradientKey(Color.Red, 0),
-				new GradientKey(Color.Green, 0.5f),
-				new GradientKey(Color.Blue, 1)
+				new GradientKey(new Color(1, 255, 0, 0), 0),
+				new GradientKey(new Color(1, 0, 255, 0), 0.5f),
+				new GradientKey(new Color(1, 0, 0, 255), 1)
 			};
 			
 			// RGBA gradient color keys
 			var rgbaColorKeys = new List<GradientKey>
 			{
-				new GradientKey(Color.Red, 0),
-				new GradientKey(Color.Green, 1 / 3f),
-				new GradientKey(Color.Blue, 2 / 3f),
-				new GradientKey(Color.Black, 1)
+				new GradientKey(new Color(1, 255, 0, 0), 0),
+				new GradientKey(new Color(1, 0, 255, 0), 1 / 3f),
+				new GradientKey(new Color(1, 0, 0, 255), 2 / 3f),
+				new GradientKey(new Color(1, 0, 0, 0), 1)
 			};
 			
 			// RGBA gradient alpha keys
@@ -106,14 +103,14 @@ namespace LibNoise
 			// Terrain gradient color keys
 			var terrainColorKeys = new List<GradientKey>
 			{
-				new GradientKey(Color.FromArgb(255, 0, 0, 128), 0),
-				new GradientKey(Color.FromArgb(255, 32, 64, 128), 0.4f),
-				new GradientKey(Color.FromArgb(255, 64, 96, 191), 0.48f),
-				new GradientKey(Color.FromArgb(255, 0, 191, 0), 0.5f),
-				new GradientKey(Color.FromArgb(255, 191, 191, 0), 0.625f),
-				new GradientKey(Color.FromArgb(255, 159, 96, 64), 0.85f),
-				new GradientKey(Color.FromArgb(255, 128, 255, 255), 0.98f),
-				new GradientKey(Color.FromArgb(255, 240, 240, 250), 1)
+				new GradientKey(new Color(255, 0, 0, 128), 0),
+				new GradientKey(new Color(255, 32, 64, 128), 0.4f),
+				new GradientKey(new Color(255, 64, 96, 191), 0.48f),
+				new GradientKey(new Color(255, 0, 191, 0), 0.5f),
+				new GradientKey(new Color(255, 191, 191, 0), 0.625f),
+				new GradientKey(new Color(255, 159, 96, 64), 0.85f),
+				new GradientKey(new Color(255, 128, 255, 255), 0.98f),
+				new GradientKey(new Color(255, 240, 240, 250), 1)
 			};
 			
 			// Generic gradient alpha keys
@@ -132,63 +129,6 @@ namespace LibNoise
 			
 			_terrain = new Gradient();
 			_terrain.SetKeys(terrainColorKeys.ToArray());
-		}
-
-		public static Gradient CreateGradientServer(List<GradientKeyData> keyData){
-			List<GradientKey> keys = new List<GradientKey> ();
-			for (int i = 0; i < keyData.Count; i++) {
-				if (keyData[i].isImage){
-					List<Color[]> images = new List<Color[]>();
-					string[] files = keyData[i].imageFiles.ToArray();
-					for (int j = 0; j < files.Length; j++){
-						string file = AppDirectory + files[j];
-						if (File.Exists(file)){
-							Bitmap map =  new Bitmap (Bitmap.FromFile (file));
-							//Logger.Log("{0}: {1} {2}", file, map.Width.ToString(), map.Height.ToString());
-							Color[] imgColors = new Color[map.Width * map.Height];
-							for (int x = 0; x < map.Width; x++) {
-								for (int y = 0; y < map.Height; y++){
-									imgColors[x + y * map.Width] = map.GetPixel(x, y);
-								}
-							}
-							if (!TextureFiles.ContainsKey(files[j]))
-								TextureFiles.Add(files[j], imgColors);
-							keyData[i].images.Add(imgColors);
-							images.Add(imgColors);
-						}
-					}
-					keys.Add(new GradientKey(images, 10, 10, keyData[i].time));
-				}
-				else
-				{
-
-					keys.Add(new GradientKey(keyData[i].color, keyData[i].time));
-				}
-			}
-			return CreateGradient (keys);
-		}
-
-		public static Gradient CreateGradientClient(List<GradientKeyData> keyData){
-			List<GradientKey> keys = new List<GradientKey> ();
-			for (int i = 0; i < keyData.Count; i++) {
-				if (keyData[i].isImage){
-					List<Color[]> images = new List<Color[]>();
-					string[] files = keyData[i].imageFiles.ToArray();
-					for (int j = 0; j < files.Length; j++){
-						string file = files[j];
-						if (TextureFiles.ContainsKey(file)){
-							images.Add(TextureFiles[file]);
-						}
-					}
-					keys.Add(new GradientKey(images, 10, 10, keyData[i].time));
-				}
-				else
-				{
-					
-					keys.Add(new GradientKey(keyData[i].color, keyData[i].time));
-				}
-			}
-			return CreateGradient (keys);
 		}
 
 		public static Gradient CreateGradient(List<GradientKey> keys){
@@ -243,7 +183,7 @@ namespace LibNoise
 
 		public static string AppDirectory;
 
-		public static Dictionary<string, Color[]> TextureFiles { get; private set; }
+		
 		
 		#endregion
 	}

@@ -65,7 +65,7 @@ namespace WarWorldInfServer
 		public World CreateNewWorld(string worldName){
 			string stage = "stage1";
 			try {
-				WorldDirectory = _worldManager.MainWorldDirectory + worldName + "/";
+				WorldDirectory = _worldManager.MainWorldDirectory + worldName + GameServer.sepChar;
 				if (!Directory.Exists (WorldDirectory))
 					Directory.CreateDirectory (WorldDirectory);
 				_worldManager.AddWorldDirectory (worldName, WorldDirectory);
@@ -87,7 +87,7 @@ namespace WarWorldInfServer
 				worldSave.time = WorldStartTime;
 				worldSave.terrain = Terrain.Settings;
 				FileManager.SaveConfigFile(WorldDirectory + settings.WorldSaveFile, worldSave, false);
-				GameServer.Instance.Users.Save(WorldDirectory + "Users/");
+				GameServer.Instance.Users.Save(WorldDirectory + "Users" + GameServer.sepChar);
 				
 				Logger.Log ("World \"{0}\" created.", worldName);
 				GameServer.Instance.StartWorld (this);
@@ -113,7 +113,7 @@ namespace WarWorldInfServer
 				WorldConfigSave worldSave = (WorldConfigSave)FileManager.LoadObject<WorldConfigSave>(WorldDirectory + settings.WorldSaveFile, false);
 				WorldStartTime = worldSave.time;
 				Terrain = new TerrainBuilder(worldSave.terrain);
-				GameServer.Instance.Users.LoadUsers(WorldDirectory + "Users/");
+				GameServer.Instance.Users.LoadUsers(WorldDirectory + "Users" + GameServer.sepChar);
 
 				Logger.Log("World \"{0}\" loaded.", worldName);
 				GameServer.Instance.StartWorld(this);
@@ -140,7 +140,7 @@ namespace WarWorldInfServer
 
 			if (!File.Exists(WorldDirectory + settings.TerrainImageFile))
 				Terrain.Save (WorldDirectory + settings.TerrainImageFile);
-			GameServer.Instance.Users.Save (WorldDirectory + "Users/");
+			GameServer.Instance.Users.Save (WorldDirectory + "Users" + GameServer.sepChar);
 			
 			Logger.Log ("World \"{0}\" saved.", worldName);
 		}

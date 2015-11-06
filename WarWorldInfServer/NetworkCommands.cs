@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using System.Collections.Generic;
 using LibNoise;
+using LibNoise.SerializationStructs;
 using Newtonsoft.Json;
 
 namespace WarWorldInfServer
@@ -12,12 +13,12 @@ namespace WarWorldInfServer
 
 		public NetworkCommands ()
 		{
-			_server = GameServer.Instance;
+			/*_server = GameServer.Instance;
 			_server.Net.AddCommand ("ping", Ping_CMD);
 			_server.Net.AddCommand ("login", Login_CMD);
 			_server.Net.AddCommand ("getsalt", GetSalt_CMD);
 			_server.Net.AddCommand ("traffic", Traffic_CMD);
-			_server.Net.AddCommand ("getterrain", GetTerrain_CMD);
+			_server.Net.AddCommand ("getterrain", GetTerrain_CMD);*/
 		}
 
 		private void Ping_CMD(IPEndPoint endPoint, string args){
@@ -32,8 +33,8 @@ namespace WarWorldInfServer
 		
 		private void Login_CMD(IPEndPoint endPoint, string args){
 			try {
-				SerializationStructs.Login loginData = JsonConvert.DeserializeObject<SerializationStructs.Login> (args);
-				SerializationStructs.ResponseType responseType = SerializationStructs.ResponseType.Failed;
+				Login loginData = JsonConvert.DeserializeObject<Login> (args);
+				ResponseType responseType = ResponseType.Failed;
 				User.PermissionLevel permission = User.PermissionLevel.None;
 				string sessionKey = string.Empty;
 				string message = string.Empty;
@@ -47,7 +48,7 @@ namespace WarWorldInfServer
 							user = _server.Users.CreateUser(loginData.name);
 						}
 						bool loggedIn = user.Login (endPoint.Address.ToString (), HashHelper.HashPasswordServer(loginData.password, loginData.salt));
-						responseType = loggedIn ? SerializationStructs.ResponseType.Successfull : SerializationStructs.ResponseType.Failed;
+						responseType = loggedIn ? ResponseType.Successfull : ResponseType.Failed;
 						permission = loggedIn ? user.Permission : User.PermissionLevel.None;
 						sessionKey = user.SessionKey;
 						message = user.LoginMessage;
@@ -61,7 +62,7 @@ namespace WarWorldInfServer
 					//Logger.LogWarning("User {0} tried to log in with no world loaded!", loginData.name);
 				}
 				
-				SerializationStructs.LoginResponse response = new SerializationStructs.LoginResponse (responseType, permission, sessionKey, message);
+				LoginResponse response = new LoginResponse (responseType, permission.ToString(), sessionKey, message);
 				_server.Net.Send(endPoint, "loginresponse" + NetServer.Delimiter + JsonConvert.SerializeObject(response));
 			}
 			catch (Exception e){
@@ -75,7 +76,7 @@ namespace WarWorldInfServer
 		}
 
 		private void GetTerrain_CMD(IPEndPoint endPoint, string args){
-			SerializationStructs.ResponseType responseType = SerializationStructs.ResponseType.Failed;
+			ResponseType responseType = ResponseType.Failed;
 			int seed = 0;
 			int width = 0;
 			int height = 0;
@@ -87,12 +88,13 @@ namespace WarWorldInfServer
 			if (_server.WorldLoaded) {
 				if (_server.Users.SessionKeyExists (args)) {
 					TerrainBuilder builder = _server.Worlds.CurrentWorld.Terrain;
-					seed = builder.Seed;
+                    responseType = ResponseType.Successfull;
+                    seed = builder.Seed;
 					width = builder.Width;
 					height = builder.Height;
 					module = builder.NoiseModule;
 					gradient = new List<GradientPresets.GradientKeyData>(builder.GradientPreset);
-					TextureFiles = new List<string> (GradientPresets.TextureFiles.Keys).ToArray ();
+					TextureFiles = new List<string> (GradientCreator.TextureFiles.Keys).ToArray ();
 					message = "success";
 				} else
 					message = "Invalid session key";
@@ -105,7 +107,7 @@ namespace WarWorldInfServer
 				gradient[i].images.Clear(); 
 			}
 
-			SerializationStructs.MapData data = new SerializationStructs.MapData (responseType, seed, width, height, gradient, TextureFiles, message);
+			MapData data = new MapData (responseType, seed, width, height, gradient, TextureFiles, message);
 			string sendStr = JsonConvert.SerializeObject (
 				data, Formatting.Indented);
 			//Logger.Print (sendStr.Length * sizeof(char));
@@ -120,14 +122,18 @@ namespace WarWorldInfServer
 				Logger.PrintNoFormat(sendStr);
 			}
 
-			foreach (string imageName in GradientPresets.TextureFiles.Keys) {
-				List<System.Drawing.Color> image = new List<System.Drawing.Color>(GradientPresets.TextureFiles[imageName]);
-				Libnoise.SerializationStructs.ImageFileData imageStruct = new Libnoise.SerializationStructs.ImageFileData(imageName, image);
-				string imageStr = JsonConvert.SerializeObject(imageStruct, Formatting.Indented, new JsonSerializerSettings{TypeNameHandling = TypeNameHandling.All});
-				if (imageStr.Length * sizeof(char) <= 65536)
-					_server.Net.Send(endPoint, "setimage" + NetServer.Delimiter + imageStr);
-				else
-					Logger.Log("{0} is to big to send.", imageName);
+            System.Threading.ManualResetEvent reset = new System.Threading.ManualResetEvent(false);
+			foreach (string imageName in GradientCreator.TextureFiles.Keys) {
+                reset.WaitOne(1);
+                LibNoise.Color[] image = ColorConvert.LibColList(GradientCreator.TextureFiles[imageName]);
+				LibNoise.SerializationStructs.ImageFileData imageStruct = new LibNoise.SerializationStructs.ImageFileData(imageName, image);
+				string imageStr = JsonConvert.SerializeObject(imageStruct, Formatting.None, new JsonSerializerSettings{TypeNameHandling = TypeNameHandling.All});
+                if (imageStr.Length * sizeof(char) <= 65536) {
+                    _server.Net.Send(endPoint, "setimage" + NetServer.Delimiter + imageStr);
+                    Logger.Log("sent image: {0}", imageName);
+                }
+                else
+                    Logger.Log("{0} is to big to send.", imageName);
 			}
 		}
 	}

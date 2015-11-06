@@ -3,7 +3,6 @@ using System.IO;
 using System.Text;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Windows.Forms;
 using System.Threading;
 using System.Drawing;
 using LibNoise;
@@ -114,7 +113,7 @@ namespace WarWorldInfServer
 		private object Create_CMD(params string[] args){
 			try {
 				if (args.Length == 2){
-					_server.Worlds.CreateWorld(args[1]);
+					TaskQueue.QeueAsync("GeneralWorker", ()=> _server.Worlds.CreateWorld(args[1]));
 				}
 			}
 			catch(Exception e){
@@ -190,19 +189,18 @@ namespace WarWorldInfServer
 			TaskQueue.QeueAsync("terrain preview", ()=>{
 				try {
 					List<GradientPresets.GradientKeyData> keys = new List<GradientPresets.GradientKeyData>();
-					
-					keys.Add(new GradientPresets.GradientKeyData(new GradientPresets.GColor(255, 0, 0, 128), 0));
-					keys.Add(new GradientPresets.GradientKeyData(new GradientPresets.GColor(255, 32, 64, 128), 0.4f));
-					keys.Add(new GradientPresets.GradientKeyData(new GradientPresets.GColor(255, 64, 96, 191), 0.48f));
-					keys.Add(new GradientPresets.GradientKeyData(new List<string> {"terrainTextures/sand.png"}, 0.5f));
-					keys.Add(new GradientPresets.GradientKeyData(new List<string> {"terrainTextures/trees1.png", "terrainTextures/trees2.png"}, 0.52f));
-					keys.Add(new GradientPresets.GradientKeyData(new List<string> {"terrainTextures/grass1.png", "terrainTextures/trees2.png"}, 0.55f));
-					keys.Add(new GradientPresets.GradientKeyData(new List<string> {"terrainTextures/grass1.png", "terrainTextures/grass2.png", "terrainTextures/trees2.png"}, 0.60f));
-					keys.Add(new GradientPresets.GradientKeyData(new List<string> {"terrainTextures/grass1.png", "terrainTextures/grass2.png"}, 0.90f));
-					keys.Add(new GradientPresets.GradientKeyData(new List<string> {"terrainTextures/grass1.png", "terrainTextures/grass2.png"}, 1f));
+                    keys.Add(new GradientPresets.GradientKeyData(new LibNoise.Color(255, 0, 0, 128), 0));
+					keys.Add(new GradientPresets.GradientKeyData(new LibNoise.Color(255, 32, 64, 128), 0.4f));
+					keys.Add(new GradientPresets.GradientKeyData(new LibNoise.Color(255, 64, 96, 191), 0.48f));
+					keys.Add(new GradientPresets.GradientKeyData(new List<string> {"sand.png"}, 0.5f));
+					keys.Add(new GradientPresets.GradientKeyData(new List<string> {"trees1.png", "trees2.png" }, 0.52f));
+					keys.Add(new GradientPresets.GradientKeyData(new List<string> {"grass1.png", "trees2.png"}, 0.55f));
+					keys.Add(new GradientPresets.GradientKeyData(new List<string> {"grass1.png", "grass2.png", "trees2.png"}, 0.60f));
+					keys.Add(new GradientPresets.GradientKeyData(new List<string> {"grass1.png", "grass2.png"}, 0.90f));
+					keys.Add(new GradientPresets.GradientKeyData(new List<string> {"grass1.png", "grass2.png"}, 1f));
 					//GradientPresets.CreateGradient(keys);
 					GradiantPresetLoader.PresetSerializer saveObj = new GradiantPresetLoader.PresetSerializer(_server.Settings.TerrainPreset, keys);
-					FileManager.SaveConfigFile(GameServer.Instance.AppDirectory + "GradientPresets/"+_server.Settings.TerrainPreset+".json", saveObj, false);
+					FileManager.SaveConfigFile(GameServer.Instance.AppDirectory + "GradientPresets" + GameServer.sepChar +_server.Settings.TerrainPreset+".json", saveObj, false);
 					//return;
 					IModule module = new Perlin ();
 					((Perlin)module).OctaveCount = 16;
@@ -211,16 +209,16 @@ namespace WarWorldInfServer
 					TerrainBuilder builder = new TerrainBuilder(settings.TerrainWidth, settings.TerrainHeight, seed);
 					builder.Generate (module, _server.Settings.TerrainPreset);
 					System.Drawing.Bitmap map = builder.GetBitmap();
-					Form imageForm = new Form ();
+                    /*System.Windows.Forms.Form imageForm = new System.Windows.Forms.Form();
 					imageForm.Text = "Seed preview: " + seed;
 					imageForm.Width = settings.TerrainWidth;
 					imageForm.Height = settings.TerrainHeight;
-					imageForm.FormBorderStyle = FormBorderStyle.Sizable;
-					imageForm.Controls.Add (new PictureBox () {Image = map, Dock = DockStyle.Fill});
+					imageForm.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable;
+					imageForm.Controls.Add (new System.Windows.Forms.PictureBox () {Image = map, Dock = System.Windows.Forms.DockStyle.Fill});
 					imageForm.ShowDialog();
 					Logger.Log("Preview closed.");
 					imageForm.Close();
-					imageForm.Dispose();
+					imageForm.Dispose();*/
 				}
 				catch(Exception e){
 					Logger.LogError("{0}\n{1}", e.Message, e.StackTrace);
@@ -233,6 +231,20 @@ namespace WarWorldInfServer
 			_server.Net.DisplayDataRate ();
 			return string.Empty;
 		}
+
+        private object NewUser_CMD(params string[] args) {
+            if (args.Length == 5)
+            {
+                string username = args[1];
+                string password = args[2];
+                string permission = args[3];
+                string email = args[4];
+                GameServer.Instance.CreatePlayer(username, password, permission, email);
+            }
+            else
+                Logger.LogError("Requires 4 arguments.");
+            return string.Empty;
+        }
 	}
 }
 

@@ -1,5 +1,5 @@
 using System;
-using System.Drawing;
+//using System.Drawing;
 
 namespace LibNoise
 {
@@ -50,7 +50,7 @@ namespace LibNoise
 			int r = lerp(lowColor.R, upperColor.R, t);
 			int g = lerp(lowColor.G, upperColor.G, t);
 			int b = lerp(lowColor.B, upperColor.B, t);
-			return Color.FromArgb(255, r, g, b);
+			return new Color(255, r, g, b);
 
 			return new Color ();
 		}

@@ -48,7 +48,7 @@ namespace WarWorldInfServer
 				SessionKey = HashHelper.RandomKey (GameServer.Instance.Settings.SessionKeyLength);
 				LoginMessage = "success";
 				Connected = true;
-				Permission = (PermissionLevel)Enum.Parse(typeof(PermissionLevel), GameServer.Instance.DB.GetPermission(Name));
+				Permission = (PermissionLevel)Enum.Parse(typeof(PermissionLevel), GameServer.Instance.DB.GetPermission(Name), true);
 				ResetTimer ();
 				GameServer.Instance.Users.AddConnectedUser(SessionKey, this);
 				return true;

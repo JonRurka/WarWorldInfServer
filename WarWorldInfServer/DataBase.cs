@@ -17,20 +17,27 @@ namespace WarWorldInfServer
 		}
 
 		public void Connect(string user, string password){
-			string conStr = string.Format ("Server={0}; database={1}; UID={2}; password={3}", Server, Database, user, password);
-			_connection = new MySqlConnection (conStr);
-			_connection.Open ();
+            try
+            {
+                string conStr = string.Format("Server={0}; database={1}; UID={2}; password={3}", Server, Database, user, password);
+                _connection = new MySqlConnection(conStr);
+                _connection.Open();
 
-			ExecuteQuery ("CREATE TABLE IF NOT EXISTS `users`(" +
-			              "userid int(6) NOT NULL AUTO_INCREMENT," +
-			              "username varchar(255) NOT NULL," +
-			              "password varchar(255) NOT NULL," +
-			              "salt varchar(255) NOT NULL," +
-			              "permission varchar(255) NOT NULL," +
-			              "email varchar(255) NOT NULL," +
-			              "PRIMARY KEY (userid)" +
-			              ") ENGINE=InnoDB DEFAULT CHARSET=utf8 " +
-			              "COLLATE=utf8_unicode_ci AUTO_INCREMENT=1;").Close();
+                ExecuteQuery("CREATE TABLE IF NOT EXISTS `users`(" +
+                              "userid int(6) NOT NULL AUTO_INCREMENT," +
+                              "username varchar(255) NOT NULL," +
+                              "password varchar(255) NOT NULL," +
+                              "salt varchar(255) NOT NULL," +
+                              "permission varchar(255) NOT NULL," +
+                              "email varchar(255) NOT NULL," +
+                              "PRIMARY KEY (userid)" +
+                              ") ENGINE=InnoDB DEFAULT CHARSET=utf8 " +
+                              "COLLATE=utf8_unicode_ci AUTO_INCREMENT=1;").Close();
+            }
+            catch (Exception e)
+            {
+                Logger.LogError("{0}: {1}\n{2}", e.GetType(), e.Message, e.StackTrace);
+            }
 		}
 
 		public MySqlDataReader ExecuteQuery(string query, params string[] args){

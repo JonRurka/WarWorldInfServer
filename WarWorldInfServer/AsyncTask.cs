@@ -33,6 +33,7 @@ namespace WarWorldInfServer
 
 		public void Close(){
 			_run = false;
+            thread.Abort();
 		}
 
 		private void Run(){

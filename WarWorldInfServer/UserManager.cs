@@ -99,7 +99,7 @@ namespace WarWorldInfServer
 				FileManager.SaveConfigFile(folder + userSave.name + ".json", userSave, false);
 			}
 
-			Logger.Log ("{0} users saved.", userList.Length.ToString());
+			//Logger.Log ("{0} users saved.", userList.Length.ToString());
 		}
 	}
 }
