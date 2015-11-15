@@ -13,6 +13,54 @@ namespace LibNoise.SerializationStructs {
         Successfull,
     }
 
+    public struct Structure {
+        public Vector2Int position;
+        public string type;
+        public string owner;
+        public string alliance;
+
+        public Structure(Vector2Int position, string type, string owner, string alliance) {
+            this.position = position;
+            this.type = type;
+            this.owner = owner;
+            this.alliance = alliance;
+        }
+    }
+
+    public struct Traffic {
+        public string command;
+        public string data;
+
+        public Traffic(string command, string data) {
+            this.command = command;
+            this.data = data;
+        }
+    }
+
+    public struct Message {
+        public string ident;
+        public MessageTypes type;
+        public string message;
+
+        public Message(string ident, MessageTypes type, string message) {
+            this.ident = ident;
+            this.type = type;
+            this.message = message;
+        }
+    }
+
+    public enum MessageTypes {
+        None,
+        Success,
+        Not_Logged_in,
+        World_Not_Loaded,
+        Invalid_Structure_Location,
+        Invalid_Op_Age,
+        No_OP,
+        Op_Not_Upgradable,
+        Not_Enough_Resources,
+    }
+
     // Structs sent to server from client
 
     // Sent from client when logging on.
@@ -28,7 +76,43 @@ namespace LibNoise.SerializationStructs {
         }
     }
 
+    public struct GetStructures {
+        public enum RequestType {
+            All,
+            Owned,
+            Visible,
+        }
+        public string sessionKey;
+        public RequestType requestType;
+        public bool onlyChanged;
+        public Vector2Int topLeft;
+        public Vector2Int bottomRight;
+
+        public GetStructures(string sessionKey, RequestType requestType, bool onlyChanged, Vector2Int topLeft, Vector2Int bottomRight) {
+            this.sessionKey = sessionKey;
+            this.requestType = requestType;
+            this.onlyChanged = onlyChanged;
+            this.topLeft = topLeft;
+            this.bottomRight = bottomRight;
+        }
+    }
+
+    public struct SetStructure {
+        public string sessionKey;
+        public Vector2Int location;
+        public string type;
+
+        public SetStructure(string sessionKey, Vector2Int location, string type) {
+            this.sessionKey = sessionKey;
+            this.location = location;
+            this.type = type;
+        }
+    }
+
+
     // Structs sent to client from server.
+
+
     public struct LoginResponse {
         public ResponseType response;
         public string permission;

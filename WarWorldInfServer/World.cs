@@ -71,22 +71,21 @@ namespace WarWorldInfServer
 				_worldManager.AddWorldDirectory (worldName, WorldDirectory);
 				
 				//TODO: create config and save files.
-				SettingsLoader settings = GameServer.Instance.Settings;
 				
 				IModule module = new Perlin ();
 				((Perlin)module).OctaveCount = 16;
-				((Perlin)module).Seed = settings.TerrainSeed;
-				Terrain = new TerrainBuilder (settings.TerrainWidth, settings.TerrainHeight, settings.TerrainSeed);
-				Terrain.Generate (module, settings.TerrainPreset);
-				Terrain.Save(WorldDirectory + settings.TerrainImageFile);
-				Terrain.SaveModule(WorldDirectory + settings.TerrainModuleFile);
+				((Perlin)module).Seed = AppSettings.TerrainSeed;
+				Terrain = new TerrainBuilder (AppSettings.TerrainWidth, AppSettings.TerrainHeight, AppSettings.TerrainSeed);
+				Terrain.Generate (module, AppSettings.TerrainPreset);
+				Terrain.Save(WorldDirectory + AppSettings.TerrainImageFile);
+				Terrain.SaveModule(WorldDirectory + AppSettings.TerrainModuleFile);
 				WorldName = worldName;
 				WorldConfigSave worldSave = new WorldConfigSave ();
-				WorldStartTime = new Time (0, 0, 0, 0, 0, 0, settings.SecondsInTicks);
+				WorldStartTime = new Time (0, 0, 0, 0, 0, 0, AppSettings.SecondsInTicks);
 				worldSave.version = GameServer.Instance.Version;
 				worldSave.time = WorldStartTime;
 				worldSave.terrain = Terrain.Settings;
-				FileManager.SaveConfigFile(WorldDirectory + settings.WorldSaveFile, worldSave, false);
+				FileManager.SaveConfigFile(WorldDirectory + AppSettings.WorldSaveFile, worldSave, false);
 				GameServer.Instance.Users.Save(WorldDirectory + "Users" + GameServer.sepChar);
 				
 				Logger.Log ("World \"{0}\" created.", worldName);
@@ -107,10 +106,8 @@ namespace WarWorldInfServer
 				WorldDirectory = _worldManager.GetWorldDirectory(worldName);
 
 				//TODO: Load world config and save files.
-				SettingsLoader settings = GameServer.Instance.Settings;
-
 				WorldName = worldName;
-				WorldConfigSave worldSave = (WorldConfigSave)FileManager.LoadObject<WorldConfigSave>(WorldDirectory + settings.WorldSaveFile, false);
+				WorldConfigSave worldSave = (WorldConfigSave)FileManager.LoadObject<WorldConfigSave>(WorldDirectory + AppSettings.WorldSaveFile, false);
 				WorldStartTime = worldSave.time;
 				Terrain = new TerrainBuilder(worldSave.terrain);
 				GameServer.Instance.Users.LoadUsers(WorldDirectory + "Users" + GameServer.sepChar);
@@ -129,17 +126,16 @@ namespace WarWorldInfServer
 		public void Save(string worldName){
 			// Save changes to files
 			WorldDirectory = _worldManager.MainWorldDirectory + worldName + "/";
-			SettingsLoader settings = GameServer.Instance.Settings;
 
 			WorldConfigSave worldSave = new WorldConfigSave ();
 			GameTimer timer = GameServer.Instance.GameTime;
 			worldSave.version = GameServer.Instance.Version;
 			worldSave.time = new Time (timer.TotalSeconds, timer.Minutes, timer.Hours, timer.Days, timer.Tick, timer.SecondsInTick, timer.MaxSecondsInTick );
 			worldSave.terrain = Terrain.Settings;
-			FileManager.SaveConfigFile (WorldDirectory + settings.WorldSaveFile, worldSave, false);
+			FileManager.SaveConfigFile (WorldDirectory + AppSettings.WorldSaveFile, worldSave, false);
 
-			if (!File.Exists(WorldDirectory + settings.TerrainImageFile))
-				Terrain.Save (WorldDirectory + settings.TerrainImageFile);
+			if (!File.Exists(WorldDirectory + AppSettings.TerrainImageFile))
+				Terrain.Save (WorldDirectory + AppSettings.TerrainImageFile);
 			GameServer.Instance.Users.Save (WorldDirectory + "Users" + GameServer.sepChar);
 			
 			Logger.Log ("World \"{0}\" saved.", worldName);

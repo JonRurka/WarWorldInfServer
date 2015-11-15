@@ -7,7 +7,8 @@ using Newtonsoft.Json;
 using LibNoise;
 using LibNoise.Models;
 using LibNoise.Modifiers;
-
+using WarWorldInfServer.Networking;
+using WarWorldInfServer.Structures;
 
 namespace WarWorldInfServer
 {
@@ -47,13 +48,14 @@ namespace WarWorldInfServer
 		public CommandExecuter CommandExec{ get; private set; }
 		public GameTimer GameTime{ get; private set; }
 		public WorldManager Worlds { get; private set; }
-		public SettingsLoader Settings { get; private set; }
+		public AppSettings Settings { get; private set; }
 		public UserManager Users { get; private set; }
 		public NetServer Net { get; private set; }
 		public DataBase DB { get; private set; }
         public AutoSave autoSaver { get; private set; }
         public WebSockServer SockServ { get; private set; }
         public FrameCounter FCounter { get; private set; }
+        public StructureControl Structures { get; private set; }
 
 		public GameServer (string[] args)
 		{
@@ -67,18 +69,17 @@ namespace WarWorldInfServer
 
 		public void Run(){
             Logger.Log("War World Infinity Server Version {0}", Version);
-            Settings = new SettingsLoader (_directory + "Settings.ini");
+            Settings = new AppSettings (_directory + "Settings.ini");
 			_taskQueue = new TaskQueue ();
 			CommandExec = new CommandExecuter ();
             SocketPolicyServer.LoadAll();
-            SockServ = new WebSockServer(Settings.ServerPort);
-            //Net = new NetServer (Settings.ServerPort, Settings.ClientPort);
-            //SockServ = new WebSockServer(Settings.ServerPort);
+            SockServ = new WebSockServer(AppSettings.ServerPort);
             _netCommands = new NetworkCommands();
-			DB = new DataBase (Settings.DbServer, Settings.Database);
-			DB.Connect (Settings.DbUsername, Settings.DbPassword);
+			DB = new DataBase (AppSettings.DbServer, AppSettings.Database);
+			DB.Connect (AppSettings.DbUsername, AppSettings.DbPassword);
 			Worlds = new WorldManager (this);
-			Users = new UserManager ();
+            Structures = new StructureControl();
+            Users = new UserManager ();
             autoSaver = new AutoSave();
             FCounter = new FrameCounter();
             _tickThread = new Thread (CommandExec.StartCommandLoop);
@@ -110,8 +111,6 @@ namespace WarWorldInfServer
 			}
 		}
 
-
-
 		public void CreatePlayer(string username, string password, string permission, string email){
             User.PermissionLevel level;
             if (Enum.TryParse<User.PermissionLevel>(permission, true, out level)) {
@@ -125,7 +124,7 @@ namespace WarWorldInfServer
 
 		public void StartWorld(World world){
 			GameTime = new GameTimer (world.WorldStartTime);
-            autoSaver.Start(Save, Settings.AutoSaveInterval);
+            autoSaver.Start(Save, AppSettings.AutoSaveInterval);
             WorldLoaded = true;
 			Logger.Log ("World \"{0}\" started.", world.WorldName);
 		}

@@ -177,10 +177,9 @@ namespace WarWorldInfServer
 		}
 
 		private object Preview_CMD(params string[] args){
-			SettingsLoader settings = GameServer.Instance.Settings;
 			int seed = 0;
 			if (args.Length == 1)
-				seed = settings.TerrainSeed;
+				seed = AppSettings.TerrainSeed;
 			else if (args.Length == 2 && args [1].Equals ("-r")) {
 				seed = new Random (GameTimer.GetEpoch ()).Next (int.MinValue, int.MaxValue);
 			} else if (args.Length == 2) {
@@ -199,15 +198,15 @@ namespace WarWorldInfServer
 					keys.Add(new GradientPresets.GradientKeyData(new List<string> {"grass1.png", "grass2.png"}, 0.90f));
 					keys.Add(new GradientPresets.GradientKeyData(new List<string> {"grass1.png", "grass2.png"}, 1f));
 					//GradientPresets.CreateGradient(keys);
-					GradiantPresetLoader.PresetSerializer saveObj = new GradiantPresetLoader.PresetSerializer(_server.Settings.TerrainPreset, keys);
-					FileManager.SaveConfigFile(GameServer.Instance.AppDirectory + "GradientPresets" + GameServer.sepChar +_server.Settings.TerrainPreset+".json", saveObj, false);
+					GradiantPresetLoader.PresetSerializer saveObj = new GradiantPresetLoader.PresetSerializer(AppSettings.TerrainPreset, keys);
+					FileManager.SaveConfigFile(GameServer.Instance.AppDirectory + "GradientPresets" + GameServer.sepChar + AppSettings.TerrainPreset+".json", saveObj, false);
 					//return;
 					IModule module = new Perlin ();
 					((Perlin)module).OctaveCount = 16;
-					((Perlin)module).Seed = settings.TerrainSeed;
+					((Perlin)module).Seed = AppSettings.TerrainSeed;
 
-					TerrainBuilder builder = new TerrainBuilder(settings.TerrainWidth, settings.TerrainHeight, seed);
-					builder.Generate (module, _server.Settings.TerrainPreset);
+					TerrainBuilder builder = new TerrainBuilder(AppSettings.TerrainWidth, AppSettings.TerrainHeight, seed);
+					builder.Generate (module, AppSettings.TerrainPreset);
 					System.Drawing.Bitmap map = builder.GetBitmap();
                     /*System.Windows.Forms.Form imageForm = new System.Windows.Forms.Form();
 					imageForm.Text = "Seed preview: " + seed;

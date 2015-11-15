@@ -20,6 +20,17 @@ namespace WarWorldInfServer
 
 		}
 
+        public void Frame() {
+            foreach (User usr in _users.Values)
+                usr.Frame();
+        }
+
+        public void TickUpdate() {
+            foreach (User usr in _users.Values) {
+                usr.TickUpdate();
+            }
+        }
+
 		public User LoadCreateUser(string name){
 			if (UserExists (name))
 				return GetUser (name);
@@ -80,10 +91,17 @@ namespace WarWorldInfServer
 
 		public void LoadUsers(string folder){
 			if (Directory.Exists (folder)) {
-				string[] userFiles = Directory.GetFiles(folder, "*.json");
-				for (int i = 0; i < userFiles.Length; i++){
-					SaveVersions.Version_Current.User userSave = FileManager.LoadObject<SaveVersions.Version_Current.User>(userFiles[i], false);
-					AddUser(new User(userSave));
+				string[] userFolders = Directory.GetDirectories(folder);
+				for (int i = 0; i < userFolders.Length; i++){
+                    string[] jsonFile = Directory.GetFiles(userFolders[i], "*.json");
+                    if (jsonFile.Length == 1) {
+                        SaveVersions.Version_Current.User userSave = FileManager.LoadObject<SaveVersions.Version_Current.User>(jsonFile[0], false);
+                        AddUser(new User(userSave));
+                    }
+                    else {
+                        Logger.LogError("Only one json file allowed in user save folder: ");
+                        Logger.LogError(userFolders[i]);
+                    }
 				}
 			} else
 				Directory.CreateDirectory (folder);
@@ -96,7 +114,10 @@ namespace WarWorldInfServer
 			User[] userList = GetUsers ();
 			for (int i = 0; i < userList.Length; i++) {
 				SaveVersions.Version_Current.User userSave = userList[i].GetSerializer();
-				FileManager.SaveConfigFile(folder + userSave.name + ".json", userSave, false);
+                string userFoler = folder + userSave.name + GameServer.sepChar;
+                if (!Directory.Exists(userFoler))
+                    Directory.CreateDirectory(userFoler);
+                FileManager.SaveConfigFile(userFoler + userSave.name + ".json", userSave, false);
 			}
 
 			//Logger.Log ("{0} users saved.", userList.Length.ToString());

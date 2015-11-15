@@ -8,7 +8,7 @@ using System.Threading;
 using System.Diagnostics;
 using System.Drawing;
 
-namespace WarWorldInfServer
+namespace WarWorldInfServer.Networking
 {
 	public class NetServer
 	{
@@ -136,7 +136,7 @@ namespace WarWorldInfServer
 		
 		public void Send(User user, string data)
 		{
-			Send(user.Ip, ClientPort, Encoding.Unicode.GetBytes(data + endStr));
+			//Send(user.Ip, ClientPort, Encoding.Unicode.GetBytes(data + endStr));
 		}
 
 		public void Send(string ip, int port, string data){
