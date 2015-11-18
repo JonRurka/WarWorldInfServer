@@ -9,7 +9,15 @@ namespace WarWorldInfServer
 {
 	public class User
 	{
-		public enum PermissionLevel
+        public enum Standing {
+            None,
+            Own,
+            Ally,
+            Nuetral,
+            Enemy,
+        }
+
+        public enum PermissionLevel
 		{
 			None,
 			Observer,
@@ -50,7 +58,7 @@ namespace WarWorldInfServer
 
         public void Frame() {
             if (Connected && UserTimeout()) {
-                Logout();
+                Logout(true, "timeout");
             }
         }
 
@@ -72,11 +80,13 @@ namespace WarWorldInfServer
 			return false;
 		}
 
-        public void Logout() {
+        public void Logout(bool sendLoggout, string reason) {
             SessionKey = "";
             Connected = false;
             LoginMessage = "logged out";
-            // send logout to client. 
+            Logger.Log("{0} logged out: {1}", Name, reason);
+            if (sendLoggout)
+                GameServer.Instance.SockServ.Send(Name, "logout", reason);
         }
 
         public void SetVisibleOps() {
@@ -95,6 +105,20 @@ namespace WarWorldInfServer
 
         public void SetFolderName() {
             SaveFolder = GameServer.Instance.AppDirectory + "Users" + GameServer.sepChar + Name + GameServer.sepChar;
+        }
+
+        public Standing GetStandings(string user) {
+            if (GameServer.Instance.Users.UserExists(user))
+                return GetStandings(GameServer.Instance.Users.GetUser(user));
+            return Standing.None;
+        }
+
+        // TODO: test standings based on alliance.
+        public Standing GetStandings(User usr) {
+            if (usr.Name == Name)
+                return Standing.Own;
+            
+            return Standing.Nuetral;
         }
 
         public bool CanCreateStructure(Vector2Int location, out LibNoise.SerializationStructs.MessageTypes reason) {

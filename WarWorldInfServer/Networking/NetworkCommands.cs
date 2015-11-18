@@ -62,7 +62,7 @@ namespace WarWorldInfServer.Networking {
                     //Logger.LogWarning("User {0} tried to log in with no world loaded!", loginData.name);
                 }
 
-                LoginResponse response = new LoginResponse(responseType, permission.ToString(), sessionKey, message);
+                LoginResponse response = new LoginResponse(responseType, permission.ToString(), sessionKey, GameServer.Instance.GameTime.Tick, message);
                 return new Traffic("loginresponse", JsonConvert.SerializeObject(response));
             }
             catch (Exception e) {
@@ -155,9 +155,10 @@ namespace WarWorldInfServer.Networking {
                     }
                     List<Structure> netStructures = new List<Structure>();
                     for (int i = 0; i < structures.Count; i++) {
-                        netStructures.Add(new Structure(structures[i].Location, structures[i].Type.ToString(), structures[i].Owner, ""));
+                        netStructures.Add(new Structure(
+                            structures[i].Location, structures[i].Type.ToString(), structures[i].Owner, "", user.GetStandings(structures[i].Owner).ToString()));
                     }
-                    Logger.Log("Sending {0} structures to {1}", netStructures.Count, user.Name);
+                    //Logger.Log("Sending {0} structures to {1}", netStructures.Count, user.Name);
                     return new Traffic("setstructures", JsonConvert.SerializeObject(netStructures.ToArray()));
                 }
                 else
@@ -181,7 +182,7 @@ namespace WarWorldInfServer.Networking {
                                                                       typeof(Structures.Structure.StructureType),
                                                                       structureInfo.type, true);
                         user.CreateStructure(structureInfo.location, strType);
-                        Logger.Log("{0} created a structure.", user.Name);
+                        //Logger.Log("{0} created a structure.", user.Name);
                         return new Traffic("opcreatesuccess", "success");
                     }
                 }

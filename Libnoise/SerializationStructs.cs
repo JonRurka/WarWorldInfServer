@@ -18,12 +18,14 @@ namespace LibNoise.SerializationStructs {
         public string type;
         public string owner;
         public string alliance;
+        public string standings;
 
-        public Structure(Vector2Int position, string type, string owner, string alliance) {
+        public Structure(Vector2Int position, string type, string owner, string alliance, string standings) {
             this.position = position;
             this.type = type;
             this.owner = owner;
             this.alliance = alliance;
+            this.standings = standings;
         }
     }
 
@@ -117,12 +119,14 @@ namespace LibNoise.SerializationStructs {
         public ResponseType response;
         public string permission;
         public string sessionKey;
+        public int tick;
         public string message;
 
-        public LoginResponse(ResponseType response, string permission, string sessionKey, string message) {
+        public LoginResponse(ResponseType response, string permission, string sessionKey, int tick, string message) {
             this.response = response;
             this.permission = permission;
             this.sessionKey = sessionKey;
+            this.tick = tick;
             this.message = message;
         }
     }

@@ -15,86 +15,7 @@ using Newtonsoft.Json;
 
 namespace WarWorldInfServer.Networking {
     public class WebSockServer {
-        /*private TcpListener _server;
-        private int _serverPort;
-
-        public WebSockServer(int serverPort) {
-            _serverPort = serverPort;
-            TaskQueue.QeueAsync("WebSocketServer", Run);
-        }
-
-        public void Run() {
-            _server = new TcpListener(IPAddress.Parse("127.0.0.1"), _serverPort);
-            _server.Start();
-            Logger.Log("Server listening...");
-            TcpClient client = _server.AcceptTcpClient();
-            Logger.Log("A client connected.");
-            NetworkStream stream = client.GetStream();
-            while (true) {
-                while (!stream.DataAvailable);
-
-                byte[] bytes = new byte[client.Available];
-                stream.Read(bytes, 0, bytes.Length);
-
-                string data = Encoding.UTF8.GetString(bytes);
-
-                if (new Regex("^GET").IsMatch(data)) {
-                    Logger.Log("handshake received.");
-                    //byte[] response = Encoding.UTF8.GetBytes
-                    byte[] response = Encoding.UTF8.GetBytes("HTTP/1.1 101 Switching Protocols" + Environment.NewLine
-                                                            + "Connection: Upgrade" + Environment.NewLine
-                                                            + "Upgrade: websocket" + Environment.NewLine
-                                                            + "Sec-WebSocket-Accept: " + Convert.ToBase64String(
-                                                                SHA1.Create().ComputeHash(
-                                                                    Encoding.UTF8.GetBytes(
-                                                                        new Regex("Sec-WebSocket-Key: (.*)").Match(data).Groups[1].Value.Trim() + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
-                                                                        )
-                                                                    )
-                                                                ) + Environment.NewLine
-                                                            );
-                    stream.Write(response, 0, response.Length);
-                }
-                else
-                {
-                    string str = string.Empty;
-                    for (int i = 0; i <bytes.Length;i++) {
-                        str += bytes[i].ToString();
-                    }
-                    Logger.Log(str);
-                }
-            }
-        }*/
-
         public delegate Traffic CMD(string data);
-
-        public class UserConnect : WebSocketBehavior {
-            private WebSockServer _server;
-            public UserConnect(WebSockServer server) {
-                _server = server;
-                _server.UsrConnect = this;
-            }
-
-            protected override void OnMessage(MessageEventArgs e) {
-                string[] input = Encoding.UTF8.GetString(e.RawData).Split('&');
-                if (GameServer.Instance.DB.UserExists(input[0])) {
-                    if (!_server.UserExists(input[0])) {
-                        string domain = HashHelper.RandomKey(8);
-                        //_server.AddUser(input[0], domain);
-                        Logger.Log("{0} connected", input);
-                        // TODO: new encryption passkey for each client.
-                        Send("domain=" + domain + "&key=N/A");
-                    }
-                    else {
-                        Logger.Log("already connected: {0}", input);
-                        Send("user already connected.");
-                    }
-                }
-                else {
-                    Logger.Log("user not found: {0}", input);
-                    Send("user not found");
-                }
-            }
-        }
 
         public class WebSockUser : WebSocketBehavior {
             public string user { get; private set; }
@@ -124,6 +45,7 @@ namespace WarWorldInfServer.Networking {
 
             protected override void OnClose(CloseEventArgs e) {
                 Connected = false;
+                GameServer.Instance.Users.GetUser(user).Logout(false, "socket closed.");
             }
 
             public void SendString(string data) {
@@ -158,7 +80,6 @@ namespace WarWorldInfServer.Networking {
         public int SentPs { get; private set; }
 
         private WebSocketServer _server;
-        private UserConnect UsrConnect { get; set; }
         private Dictionary<string, WebSockUser> ConnectedUsers { get; set; }
         private Dictionary<string, CMD> Commands { get; set; }
         private Stopwatch _watch;

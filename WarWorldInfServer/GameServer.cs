@@ -98,6 +98,7 @@ namespace WarWorldInfServer
 							if (GameTime.TickIncrease){ // update when enough seconds pass to increase tick.
 								Logger.Log("Updating world. Tick: {0}", GameTime.Tick.ToString());
 								Save();
+                                SockServ.Broadcast("tick", GameTime.Tick.ToString());
 							}
 						}
 					}
