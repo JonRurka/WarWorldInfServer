@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WarWorldInfServer {
+namespace WarWorldInfinity {
     public class FrameCounter {
         private Stopwatch _watch;
         private int _frames;

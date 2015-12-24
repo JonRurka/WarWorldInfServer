@@ -36,7 +36,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 
-namespace WarWorldInfServer.Networking {
+namespace WarWorldInfinity.Networking {
     class SocketPolicyServer
     {
 

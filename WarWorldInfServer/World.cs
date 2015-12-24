@@ -2,9 +2,9 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using Newtonsoft.Json;
-using LibNoise;
+using WarWorldInfinity.LibNoise;
 
-namespace WarWorldInfServer
+namespace WarWorldInfinity
 {
 	public class World
 	{
@@ -60,17 +60,17 @@ namespace WarWorldInfServer
 		public World (WorldManager worldManager)
 		{
 			_worldManager = worldManager;
-		}
+        }
 
 		public World CreateNewWorld(string worldName){
 			string stage = "stage1";
 			try {
+                Logger.Log("Creating new world '{0}'.", worldName);
 				WorldDirectory = _worldManager.MainWorldDirectory + worldName + GameServer.sepChar;
 				if (!Directory.Exists (WorldDirectory))
 					Directory.CreateDirectory (WorldDirectory);
 				_worldManager.AddWorldDirectory (worldName, WorldDirectory);
-				
-				//TODO: create config and save files.
+                _worldManager.CurrentWorldDirectory = WorldDirectory;
 				
 				IModule module = new Perlin ();
 				((Perlin)module).OctaveCount = 16;
@@ -79,7 +79,7 @@ namespace WarWorldInfServer
 				Terrain.Generate (module, AppSettings.TerrainPreset);
 				Terrain.Save(WorldDirectory + AppSettings.TerrainImageFile);
 				Terrain.SaveModule(WorldDirectory + AppSettings.TerrainModuleFile);
-				WorldName = worldName;
+                WorldName = worldName;
 				WorldConfigSave worldSave = new WorldConfigSave ();
 				WorldStartTime = new Time (0, 0, 0, 0, 0, 0, AppSettings.SecondsInTicks);
 				worldSave.version = GameServer.Instance.Version;
@@ -103,19 +103,18 @@ namespace WarWorldInfServer
 
 		public World LoadWorld(string worldName){
 			if (_worldManager.WorldExists (worldName)) {
-				WorldDirectory = _worldManager.GetWorldDirectory(worldName);
+                WorldDirectory = _worldManager.GetWorldDirectory(worldName);
+                GameServer.Instance.Worlds.CurrentWorldDirectory = WorldDirectory;
+                WorldName = worldName;
+                WorldConfigSave worldSave = FileManager.LoadObject<WorldConfigSave>(WorldDirectory + AppSettings.WorldSaveFile, false);
+                WorldStartTime = worldSave.time;
+                Terrain = new TerrainBuilder(worldSave.terrain);
+                GameServer.Instance.Users.LoadUsers(WorldDirectory + "Users" + GameServer.sepChar);
 
-				//TODO: Load world config and save files.
-				WorldName = worldName;
-				WorldConfigSave worldSave = (WorldConfigSave)FileManager.LoadObject<WorldConfigSave>(WorldDirectory + AppSettings.WorldSaveFile, false);
-				WorldStartTime = worldSave.time;
-				Terrain = new TerrainBuilder(worldSave.terrain);
-				GameServer.Instance.Users.LoadUsers(WorldDirectory + "Users" + GameServer.sepChar);
+                Logger.Log("World \"{0}\" loaded.", worldName);
+                GameServer.Instance.StartWorld(this);
 
-				Logger.Log("World \"{0}\" loaded.", worldName);
-				GameServer.Instance.StartWorld(this);
-
-			} else {
+            } else {
 				Logger.LogWarning ("Created world \"{0}\" as it does not exists.", worldName);
 				CreateNewWorld(worldName);
 			}
@@ -124,7 +123,6 @@ namespace WarWorldInfServer
 		}
 
 		public void Save(string worldName){
-			// Save changes to files
 			WorldDirectory = _worldManager.MainWorldDirectory + worldName + "/";
 
 			WorldConfigSave worldSave = new WorldConfigSave ();

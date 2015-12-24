@@ -2,7 +2,7 @@ using System;
 using MySql.Data;
 using MySql.Data.MySqlClient;
 
-namespace WarWorldInfServer
+namespace WarWorldInfinity
 {
 	public class DataBase
 	{

@@ -1,6 +1,6 @@
 using System;
 using System.Diagnostics;
-namespace WarWorldInfServer
+namespace WarWorldInfinity
 {
 	public class SetableStopwatch : Stopwatch
 	{

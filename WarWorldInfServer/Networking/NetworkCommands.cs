@@ -1,11 +1,11 @@
 using System;
 using System.Net;
 using System.Collections.Generic;
-using LibNoise;
-using LibNoise.SerializationStructs;
+using WarWorldInfinity.LibNoise;
+using WarWorldInfinity.Shared;
 using Newtonsoft.Json;
 
-namespace WarWorldInfServer.Networking {
+namespace WarWorldInfinity.Networking {
     public class NetworkCommands {
         GameServer _server;
 
@@ -18,6 +18,8 @@ namespace WarWorldInfServer.Networking {
             _server.SockServ.AddCommand("getstructures", GetStructures_CMD);
             _server.SockServ.AddCommand("createstructure", CreateStructure_CMD);
             _server.SockServ.AddCommand("changestructure", ChangeStructure_CMD);
+            _server.SockServ.AddCommand("structurecommand", StructureCommand_CMD);
+            _server.SockServ.AddCommand("inchat", Chat_CMD);
         }
 
         private Traffic Echo_CMD(string args) {
@@ -31,12 +33,13 @@ namespace WarWorldInfServer.Networking {
         }
 
         private Traffic Login_CMD(string args) {
+            MessageTypes type = MessageTypes.None;
+            string message = string.Empty;
             try {
                 Login loginData = JsonConvert.DeserializeObject<Login>(args);
                 ResponseType responseType = ResponseType.Failed;
                 User.PermissionLevel permission = User.PermissionLevel.None;
                 string sessionKey = string.Empty;
-                string message = string.Empty;
                 if (_server.WorldLoaded) {
                     if (_server.DB.UserExists(loginData.name)) {
                         User user;
@@ -52,23 +55,24 @@ namespace WarWorldInfServer.Networking {
                         sessionKey = user.SessionKey;
                         message = user.LoginMessage;
                         Logger.Log("User {0} logged in.", loginData.name);
+                        LoginResponse response = new LoginResponse(responseType, permission.ToString(), sessionKey, GameServer.Instance.GameTime.Tick, message);
+                        return new Traffic("loginresponse", JsonConvert.SerializeObject(response));
                     }
                     else {
                         message = "User not found!";
+                        type = MessageTypes.User_Not_Found;
                     }
                 }
                 else {
                     message = "No world instance loaded!";
+                    type = MessageTypes.World_Not_Loaded;
                     //Logger.LogWarning("User {0} tried to log in with no world loaded!", loginData.name);
                 }
-
-                LoginResponse response = new LoginResponse(responseType, permission.ToString(), sessionKey, GameServer.Instance.GameTime.Tick, message);
-                return new Traffic("loginresponse", JsonConvert.SerializeObject(response));
             }
             catch (Exception e) {
                 Logger.LogError(e.StackTrace);
             }
-            return default(Traffic);
+            return new Traffic("message", JsonConvert.SerializeObject(new Message("_server_", type, message)));
         }
 
         private Traffic GetTerrain_CMD(string args) {
@@ -78,6 +82,8 @@ namespace WarWorldInfServer.Networking {
             int height = 0;
             IModule module = null;
             List<GradientPresets.GradientKeyData> gradient = new List<GradientPresets.GradientKeyData>();
+            MapData mdata;
+            MessageTypes type = MessageTypes.None;
             string[] TextureFiles = new string[0];
             string message = string.Empty;
 
@@ -99,8 +105,8 @@ namespace WarWorldInfServer.Networking {
                         gradient[i].images.Clear();
                     }
 
-                    MapData data = new MapData(responseType, seed, width, height, gradient, TextureFiles, message);
-                    string sendStr = JsonConvert.SerializeObject(data);
+                    mdata = new MapData(responseType, seed, width, height, gradient, TextureFiles, message);
+                    string sendStr = JsonConvert.SerializeObject(mdata);
                     string moduleStr = JsonConvert.SerializeObject(module, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All });
                     _server.SockServ.Send(user, "setterrainmodule", moduleStr);
                     _server.SockServ.Send(user, "setterraindata", sendStr);
@@ -115,20 +121,19 @@ namespace WarWorldInfServer.Networking {
                         _server.SockServ.Send(user, "setimage", imageStr);
                         //Logger.Log("sent image: {0}", imageName);
                     }
-
+                    message = "success";
+                    type = MessageTypes.Success;
+                    return new Traffic("message", JsonConvert.SerializeObject(new Message("_server_", type, message)));
                 }
                 else {
                     message = "Invalid session key";
-                    MapData data = new MapData(responseType, seed, width, height, gradient, TextureFiles, message);
-                    return new Traffic("setterraindata", JsonConvert.SerializeObject(data));
+                    type = MessageTypes.Not_Logged_in;
+                    return new Traffic("message", JsonConvert.SerializeObject(new Message("_server_", type, message)));
                 }
             }
-            else {
-                message = "World not loaded";
-                MapData data = new MapData(responseType, seed, width, height, gradient, TextureFiles, message);
-                return new Traffic("setterraindata", JsonConvert.SerializeObject(data));
-            }
-            return default(Traffic);
+            message = "World not loaded";
+            type = MessageTypes.World_Not_Loaded;
+            return new Traffic("message", JsonConvert.SerializeObject(new Message("_server_", type, message)));
         }
 
         private Traffic GetStructures_CMD(string args) {
@@ -140,26 +145,24 @@ namespace WarWorldInfServer.Networking {
                     User user = _server.Users.GetConnectedUser(getStructures.sessionKey);
                     List<Structures.Structure> structures = new List<Structures.Structure>();
                     if (getStructures.requestType == GetStructures.RequestType.All) {
-                        Structures.Structure[] ownedOps = user.GetOwnedOps(getStructures.onlyChanged);
-                        Structures.Structure[] visibleOps = user.GetVisibleOps(getStructures.onlyChanged);
-                        structures.AddRange(ownedOps);
-                        structures.AddRange(visibleOps);
+                        structures.AddRange(user.GetOwnedOps(getStructures.onlyChanged));
+                        structures.AddRange(user.GetVisibleOps(getStructures.onlyChanged));
                     }
                     if (getStructures.requestType == GetStructures.RequestType.Owned) {
-                        Structures.Structure[] ownedOps = user.GetOwnedOps(getStructures.onlyChanged);
-                        structures.AddRange(ownedOps);
+                        structures.AddRange(user.GetOwnedOps(getStructures.onlyChanged));
                     }
                     if (getStructures.requestType == GetStructures.RequestType.Visible) {
-                        Structures.Structure[] visibleOps = user.GetVisibleOps(getStructures.onlyChanged);
-                        structures.AddRange(visibleOps);
+                        structures.AddRange(user.GetVisibleOps(getStructures.onlyChanged));
                     }
+
                     List<Structure> netStructures = new List<Structure>();
                     for (int i = 0; i < structures.Count; i++) {
                         netStructures.Add(new Structure(
-                            structures[i].Location, structures[i].Type.ToString(), structures[i].Owner, "", user.GetStandings(structures[i].Owner).ToString()));
+                            structures[i].Location, structures[i].Type.ToString(), structures[i].Owner.Name, "", user.GetStandings(structures[i].Owner).ToString(), structures[i].extraData));
                     }
-                    //Logger.Log("Sending {0} structures to {1}", netStructures.Count, user.Name);
-                    return new Traffic("setstructures", JsonConvert.SerializeObject(netStructures.ToArray()));
+
+                    _server.SockServ.Send(user.Name, "setstructurecommands", JsonConvert.SerializeObject(GameServer.Instance.Structures.GetCommands()));
+                    return new Traffic("setstructures", JsonConvert.SerializeObject(netStructures.ToArray(), new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All }));
                 }
                 else
                     type = MessageTypes.Not_Logged_in;
@@ -181,7 +184,7 @@ namespace WarWorldInfServer.Networking {
                         Structures.Structure.StructureType strType = (Structures.Structure.StructureType)Enum.Parse(
                                                                       typeof(Structures.Structure.StructureType),
                                                                       structureInfo.type, true);
-                        user.CreateStructure(structureInfo.location, strType);
+                        user.CreateStructure(structureInfo.location, strType, false);
                         //Logger.Log("{0} created a structure.", user.Name);
                         return new Traffic("opcreatesuccess", "success");
                     }
@@ -207,6 +210,44 @@ namespace WarWorldInfServer.Networking {
                         user.changeStructure(structureInfo.location, strType);
                         return new Traffic("opcreatesuccess", "success");
                     }
+                }
+                else
+                    type = MessageTypes.Not_Logged_in;
+            }
+            else
+                type = MessageTypes.World_Not_Loaded;
+            return new Traffic("message", JsonConvert.SerializeObject(new Message("_server_", type, message)));
+        }
+
+        private Traffic StructureCommand_CMD(string args) {
+            StructureCommand command = JsonConvert.DeserializeObject<StructureCommand>(args);
+            MessageTypes type = MessageTypes.None;
+            string message = "";
+
+            if (_server.WorldLoaded) {
+                if (_server.Users.SessionKeyExists(command.sessionKey)) {
+                    User user = _server.Users.GetConnectedUser(command.sessionKey);
+                    user.SendCommand(command.location, command.command);
+                    type = MessageTypes.Success;
+                }
+                else
+                    type = MessageTypes.Not_Logged_in;
+            }
+            else
+                type = MessageTypes.World_Not_Loaded;
+
+            return new Traffic("message", JsonConvert.SerializeObject(new Message("_server_", type, message)));
+        }
+
+        private Traffic Chat_CMD(string args) {
+            ChatMessage msg = JsonConvert.DeserializeObject<ChatMessage>(args);
+            MessageTypes type = MessageTypes.None;
+            string message = "";
+
+            if (_server.WorldLoaded) {
+                if (_server.Users.SessionKeyExists(msg.sessionKey)) {
+                    _server.Chat.Submit(msg.player, msg.message);
+                    type = MessageTypes.Success;
                 }
                 else
                     type = MessageTypes.Not_Logged_in;

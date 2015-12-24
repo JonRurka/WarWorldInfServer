@@ -8,7 +8,7 @@ using System.Threading;
 using System.Diagnostics;
 using System.Drawing;
 
-namespace WarWorldInfServer.Networking
+namespace WarWorldInfinity.Networking
 {
 	public class NetServer
 	{

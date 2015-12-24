@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using LibNoise;
+using WarWorldInfinity.Shared;
 
-namespace WarWorldInfServer.Structures {    
+namespace WarWorldInfinity.Structures {    
     public static class RadarUtility {
         public struct RadarData {
             public Vector2Int position;

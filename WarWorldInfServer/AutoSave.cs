@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
 
-namespace WarWorldInfServer
+namespace WarWorldInfinity
 {
     public class AutoSave
     {

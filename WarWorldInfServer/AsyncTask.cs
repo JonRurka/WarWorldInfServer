@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 
-namespace WarWorldInfServer
+namespace WarWorldInfinity
 {
 	public class AsyncTask
 	{
@@ -53,7 +53,7 @@ namespace WarWorldInfServer
 						}
 						catch(Exception e){
 							Logger.LogError("{0} queue: {1}", threadName, e.Message);
-							_currentActions = null;
+							//_currentActions = null;
 						}
 					}
 				}

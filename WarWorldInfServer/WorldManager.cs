@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 
-namespace WarWorldInfServer
+namespace WarWorldInfinity
 {
 
 	public class WorldManager
@@ -12,13 +12,14 @@ namespace WarWorldInfServer
 		private Dictionary<string, string> _worldFolders;
 
 		public World CurrentWorld { get; private set; }
+        public string CurrentWorldDirectory { get; set; }
 		public string MainWorldDirectory { get; private set; }
 
 		public WorldManager (GameServer server)
 		{
 			_server = server;
 			_worldFolders = new Dictionary<string, string> ();
-			MainWorldDirectory = Directory.GetCurrentDirectory() + "/Worlds/";
+			MainWorldDirectory = Directory.GetCurrentDirectory() + GameServer.sepChar + "Worlds" + GameServer.sepChar;
 			if (!Directory.Exists (MainWorldDirectory)) {
 				Directory.CreateDirectory (MainWorldDirectory);
 				Logger.Log("World Directory created.");
@@ -26,8 +27,8 @@ namespace WarWorldInfServer
 
 			string[] worldDirectories = Directory.GetDirectories (MainWorldDirectory);
 			for (int i = 0; i < worldDirectories.Length; i++) {
-				string folderName = Path.GetFileName(Path.GetDirectoryName(worldDirectories[i] + "/"));
-				_worldFolders[folderName] = worldDirectories[i] + "/";
+				string folderName = Path.GetFileName(Path.GetDirectoryName(worldDirectories[i] + GameServer.sepChar));
+				_worldFolders[folderName] = worldDirectories[i] + GameServer.sepChar;
 				//Logger.Log(folderName);
 			}
 
@@ -35,7 +36,8 @@ namespace WarWorldInfServer
 		}
 
 		public World LoadWorld(string worldName){
-			CurrentWorld = new World (this).LoadWorld(worldName);
+            GameServer.Instance.WorldLoaded = true;
+            CurrentWorld = new World (this).LoadWorld(worldName);
 			return CurrentWorld;
 		}
 
@@ -52,7 +54,8 @@ namespace WarWorldInfServer
 		}
 
 		public World CreateWorld(string worldName){
-			if (!WorldExists (worldName)) {
+            GameServer.Instance.WorldLoaded = true;
+            if (!WorldExists (worldName)) {
 				CurrentWorld = new World (this).CreateNewWorld (worldName);
 				return CurrentWorld;
 			}

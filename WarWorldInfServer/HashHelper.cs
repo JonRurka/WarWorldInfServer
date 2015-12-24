@@ -6,7 +6,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
-namespace WarWorldInfServer
+namespace WarWorldInfinity
 {
 	public static class HashHelper
 	{

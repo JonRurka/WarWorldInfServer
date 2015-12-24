@@ -8,17 +8,17 @@ using System.Threading.Tasks;
 using System.Security.Cryptography;
 using System.Net;
 using System.Net.Sockets;
-using LibNoise.SerializationStructs;
+using WarWorldInfinity.Shared;
 using WebSocketSharp;
 using WebSocketSharp.Server;
 using Newtonsoft.Json;
 
-namespace WarWorldInfServer.Networking {
+namespace WarWorldInfinity.Networking {
     public class WebSockServer {
         public delegate Traffic CMD(string data);
 
         public class WebSockUser : WebSocketBehavior {
-            public string user { get; private set; }
+            public string user { get; set; }
             private WebSockServer _server;
             private string _encryptionPass = "QH5SnB7eXckcAqa8yUGPbqEsQ1XL9eo";
             public bool Connected { get; set; }
@@ -26,16 +26,15 @@ namespace WarWorldInfServer.Networking {
 
             public WebSockUser(WebSockServer server) {
                 _server = server;
+                user = "";
             }
 
             protected override void OnMessage(MessageEventArgs e) {
-                string input = HashHelper.Decrypt(Convert.ToBase64String(e.RawData), _encryptionPass);
+                //string input = HashHelper.Decrypt(Convert.ToBase64String(e.RawData), _encryptionPass);
+                string input = Encoding.UTF8.GetString(e.RawData);
                 if (Connected) {
                     AddConnection(input);
-                    Traffic result = _server.ProcessData(input);
-                    if (!result.command.IsNullOrEmpty()) {
-                        SendString(JsonConvert.SerializeObject(result));
-                    }
+                    _server.ProcessData(input, SendString);
                 }
             }
 
@@ -46,12 +45,13 @@ namespace WarWorldInfServer.Networking {
             protected override void OnClose(CloseEventArgs e) {
                 Connected = false;
                 GameServer.Instance.Users.GetUser(user).Logout(false, "socket closed.");
+                _server.RemoveUser(user, "socket closed.");
             }
 
             public void SendString(string data) {
                 if (Connected) {
-                    string encryptedData = HashHelper.Encrypt(data, _encryptionPass);
-                    Send(encryptedData);
+                    //string encryptedData = HashHelper.Encrypt(data, _encryptionPass);
+                    Send(data);
                 }
             }
 
@@ -59,8 +59,8 @@ namespace WarWorldInfServer.Networking {
                 Traffic result = JsonConvert.DeserializeObject<Traffic>(input);
                 if (result.command == "login") {
                     Login loginData = JsonConvert.DeserializeObject<Login>(result.data);
+                    user = loginData.name;
                     _server.AddUser(loginData.name, this);
-                    Logger.Log(loginData.name + " connected.");
                 }
             }
         }
@@ -87,19 +87,25 @@ namespace WarWorldInfServer.Networking {
         private int _sentBytes;
         private int _received;
         private int _sent;
+        private string _threadName = "netThread";
 
         public WebSockServer(int port) {
-            Port = port;
-            Commands = new Dictionary<string, CMD>();
-            ConnectedUsers = new Dictionary<string, WebSockUser>();
-            _server = new WebSocketServer(port);
-            _server.AddWebSocketService("/echo", () => new Echo() 
-                { IgnoreExtensions = true });
-            _server.AddWebSocketService("/server", () => new WebSockUser(this) 
-                { IgnoreExtensions = true });
-            _server.Start();
-            _watch = new Stopwatch();
-            _watch.Start();
+            TaskQueue.QeueAsync(_threadName, () => {
+                Port = port;
+                Commands = new Dictionary<string, CMD>();
+                ConnectedUsers = new Dictionary<string, WebSockUser>();
+                _server = new WebSocketServer(port);
+                _server.Log.Output = Log;
+                _server.AddWebSocketService("/echo", () => new Echo() { IgnoreExtensions = true });
+                _server.AddWebSocketService("/server", () => new WebSockUser(this) { IgnoreExtensions = true });
+                _server.Start();
+                _watch = new Stopwatch();
+                _watch.Start();
+            });
+        }
+
+        public void Log(LogData data, string message) {
+            Logger.Print("[NET]: " + data.Message);
         }
 
         public void Update() {
@@ -128,14 +134,18 @@ namespace WarWorldInfServer.Networking {
         }
 
         public void Stop(CloseStatusCode code, string reason) {
-            if (_server != null)
-                _server.Stop(code, reason);
+            TaskQueue.QeueAsync(_threadName, () => {
+                if (_server != null)
+                    _server.Stop(code, reason);
+            });
         }
 
         public void AddUser(string user, WebSockUser instance) {
             if (!UserExists(user)) {
                 ConnectedUsers.Add(user, instance);
             }
+            else
+                Logger.LogError("cannot add user \"{0}\"; already added.", user);
         }
 
         public void RemoveUser(string user, string reason) {
@@ -151,9 +161,11 @@ namespace WarWorldInfServer.Networking {
         }
 
         public void AddCommand(string cmd, CMD callback) {
-            if (!CommandExists(cmd.ToLower())) {
-                Commands.Add(cmd.ToLower(), callback);
-            }
+            TaskQueue.QeueAsync(_threadName, () => {
+                if (!CommandExists(cmd.ToLower())) {
+                    Commands.Add(cmd.ToLower(), callback);
+                }
+            });
         }
 
         public void RemoveCommand(string cmd) {
@@ -190,18 +202,29 @@ namespace WarWorldInfServer.Networking {
         }
 
         public void Send(string user, Traffic traffic) {
+            if (TaskQueue.GetThreadRef(_threadName) == System.Threading.Thread.CurrentThread) 
+                SendToUser(user, traffic);
+            else
+                TaskQueue.QeueAsync(_threadName, () => SendToUser(user, traffic));
+        }
+
+        private void SendToUser(string user, Traffic traffic) {
             if (UserExists(user)) {
                 ConnectedUsers[user].SendString(JsonConvert.SerializeObject(traffic));
             }
         }
 
-        public Traffic ProcessData(string data) {
-            _receivedBytes += data.Length * sizeof(char);
-            _received++;
-            Traffic traffic = JsonConvert.DeserializeObject<Traffic>(data);
-            if (CommandExists(traffic.command))
-                return Commands[traffic.command.ToLower()](traffic.data);
-            return default(Traffic);
+        public void ProcessData(string data, Action<string> callback) {
+            TaskQueue.QueueMain(() => {
+                _receivedBytes += data.Length * sizeof(char);
+                _received++;
+                Traffic traffic = JsonConvert.DeserializeObject<Traffic>(data);
+                if (CommandExists(traffic.command)) {
+                    Traffic result = Commands[traffic.command.ToLower()](traffic.data);
+                    if (!result.command.IsNullOrEmpty())
+                        TaskQueue.QeueAsync(_threadName, () => callback(JsonConvert.SerializeObject(result)));
+                }
+            });
         }
     }
 }

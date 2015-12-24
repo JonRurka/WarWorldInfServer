@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
 
-namespace WarWorldInfServer
+namespace WarWorldInfinity
 {
 	public class UserManager
 	{
@@ -17,8 +17,9 @@ namespace WarWorldInfServer
 
 		public UserManager ()
 		{
-
-		}
+            SaveVersions.Version_Current.User userSave = new SaveVersions.Version_Current.User("_server_", User.PermissionLevel.Server);
+            AddUser(new User(userSave));
+        }
 
         public void Frame() {
             foreach (User usr in _users.Values)
@@ -60,6 +61,7 @@ namespace WarWorldInfServer
 		public User GetUser(string name){
 			if (UserExists(name))
 				return _users[name];
+            Logger.LogError("User not found: " + name);
 			return null;
 		}
 
@@ -85,41 +87,54 @@ namespace WarWorldInfServer
 
 		public void AddUser(User user){
 			if (!UserExists (user.Name)) {
-				_users.Add(user.Name, user);
+                _users.Add(user.Name, user);
 			}
 		}
 
-		public void LoadUsers(string folder){
-			if (Directory.Exists (folder)) {
-				string[] userFolders = Directory.GetDirectories(folder);
-				for (int i = 0; i < userFolders.Length; i++){
-                    string[] jsonFile = Directory.GetFiles(userFolders[i], "*.json");
-                    if (jsonFile.Length == 1) {
-                        SaveVersions.Version_Current.User userSave = FileManager.LoadObject<SaveVersions.Version_Current.User>(jsonFile[0], false);
-                        AddUser(new User(userSave));
+        public void LoadUsers(string folder) {
+            if (Directory.Exists(folder)) {
+                string[] userFolders = Directory.GetDirectories(folder);
+                for (int i = 0; i < userFolders.Length; i++) {
+                    string player = new DirectoryInfo(userFolders[i]).Name;
+                    string savePath = folder + player + GameServer.sepChar + player + ".json";
+                    if (File.Exists(savePath)) {
+                        SaveVersions.Version_Current.User userSave = FileManager.LoadObject<SaveVersions.Version_Current.User>(savePath, false);
+                        if (UserExists(userSave.name)) {
+                            _users[userSave.name].Load(userSave);
+                        }
+                        else {
+                            AddUser(new User(userSave));
+                        }
                     }
                     else {
-                        Logger.LogError("Only one json file allowed in user save folder: ");
-                        Logger.LogError(userFolders[i]);
+                        Logger.LogError("cannot find user path: " + savePath);
                     }
-				}
-			} else
-				Directory.CreateDirectory (folder);
-		}
+                }
+            }
+            else {
+                Directory.CreateDirectory(folder);
+            }
+        }
 
-		public void Save(string folder){
-			if (!Directory.Exists (folder))
-				Directory.CreateDirectory (folder);
+        public void Save(string folder){
+            try {
+                if (!Directory.Exists(folder)) {
+                    Directory.CreateDirectory(folder);
+                }
 
-			User[] userList = GetUsers ();
-			for (int i = 0; i < userList.Length; i++) {
-				SaveVersions.Version_Current.User userSave = userList[i].GetSerializer();
-                string userFoler = folder + userSave.name + GameServer.sepChar;
-                if (!Directory.Exists(userFoler))
-                    Directory.CreateDirectory(userFoler);
-                FileManager.SaveConfigFile(userFoler + userSave.name + ".json", userSave, false);
-			}
-
+                User[] userList = GetUsers();
+                for (int i = 0; i < userList.Length; i++) {
+                    SaveVersions.Version_Current.User userSave = userList[i].Save();
+                    string userFoler = folder + userSave.name + GameServer.sepChar;
+                    if (!Directory.Exists(userFoler))
+                        Directory.CreateDirectory(userFoler);
+                    FileManager.SaveConfigFile(userFoler + userSave.name + ".json", userSave, false);
+                    userList[i].SaveStructures();
+                }
+            }
+            catch(Exception e) {
+                Logger.LogError("{0}: {1}\n{2}", e.GetType(), e.Message, e.StackTrace);
+            }
 			//Logger.Log ("{0} users saved.", userList.Length.ToString());
 		}
 	}

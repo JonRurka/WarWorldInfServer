@@ -2,10 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using LibNoise;
-using WarWorldInfServer.Structures;
+using System.IO;
+using lib = WarWorldInfinity.Shared;
+using WarWorldInfinity.Structures;
 
-namespace WarWorldInfServer
+namespace WarWorldInfinity
 {
 	public class User
 	{
@@ -23,19 +24,21 @@ namespace WarWorldInfServer
 			Observer,
 			User,
 			Moderator,
-			Admin
+			Admin,
+            Server
 		}
 
 		public string Id { get; set; }
 		public string Name { get; set; }
+        public Alliance alliance { get; set; }
 		public string SessionKey { get; set; }
         public string SaveFolder { get; private set; }
 		public bool Connected { get; set;}
 		public Stopwatch TimeSinceInteraction { get; private set;}
 		public PermissionLevel Permission { get; private set;}
 		public string LoginMessage {get; private set;}
-        public Dictionary<Vector2Int, Structure> ownedOutposts { get; private set; }
-        public Dictionary<Vector2Int, Structure> visibleOutposts { get; private set; }
+        public Dictionary<lib.Vector2Int, Structure> ownedOutposts { get; private set; }
+        public Dictionary<lib.Vector2Int, Structure> visibleOutposts { get; private set; }
         
 
 		/* Contains all information for a user:
@@ -48,12 +51,12 @@ namespace WarWorldInfServer
 
 		public User(){
 			TimeSinceInteraction = new Stopwatch ();
-            ownedOutposts = new Dictionary<Vector2Int, Structure>();
-            visibleOutposts = new Dictionary<Vector2Int, Structure>();
+            ownedOutposts = new Dictionary<lib.Vector2Int, Structure>();
+            visibleOutposts = new Dictionary<lib.Vector2Int, Structure>();
         }
 
 		public User (SaveVersions.Version_Current.User user) : this(){
-            Deserialize (user);
+            Load (user);
 		}
 
         public void Frame() {
@@ -90,21 +93,41 @@ namespace WarWorldInfServer
         }
 
         public void SetVisibleOps() {
-            foreach (Structure op in ownedOutposts.Values) {
-                if (op is Radar) {
-                    Radar radar = (Radar)op;
-                    Structure[] VisibleStructures = radar.VisibleStructures.Values.ToArray();
-                    for (int i = 0; i < VisibleStructures.Length; i++) {
-                        if (!visibleOutposts.ContainsKey(VisibleStructures[i].Location)) {
-                            visibleOutposts.Add(VisibleStructures[i].Location, VisibleStructures[i]);
+            if (Permission == PermissionLevel.Server || Permission == PermissionLevel.Admin) {
+                Structure[] strList = GameServer.Instance.Structures.GetStructures();
+                Logger.Log("structures: " + strList.Length);
+                for (int i = 0; i < strList.Length; i++) {
+                    if (!visibleOutposts.ContainsKey(strList[i].Location) && strList[i].Owner.Name != Name)
+                        visibleOutposts.Add(strList[i].Location, strList[i]);
+                }
+                Logger.Log("Visible ops: " + visibleOutposts.Count);
+            }
+            else {
+                foreach (Structure op in ownedOutposts.Values) {
+                    if (op is Radar) {
+                        Radar radar = (Radar)op;
+                        radar.SetVisibleStructures();
+                        lib.Vector2Int[] VisibleStructures = radar.GetVisibleStructures();
+                        for (int i = 0; i < VisibleStructures.Length; i++) {
+                            Structure structure = GameServer.Instance.Structures.GetStructure(VisibleStructures[i]);
+                            if (structure != null) {
+                                if (!visibleOutposts.ContainsKey(VisibleStructures[i]) && structure.Owner.Name != Name) {
+                                    visibleOutposts.Add(VisibleStructures[i], structure);
+                                }
+                            }
+                            else
+                                Logger.LogError("Cannot find structure: " + VisibleStructures[i]);
                         }
                     }
+                    Logger.Log("{0}: {1} radar visible ops.", Name, visibleOutposts.Count);
                 }
+                Logger.Log("{0}: {1} visible ops.", Name, visibleOutposts.Count);
             }
         }
 
         public void SetFolderName() {
-            SaveFolder = GameServer.Instance.AppDirectory + "Users" + GameServer.sepChar + Name + GameServer.sepChar;
+            if (GameServer.Instance.WorldLoaded)
+                SaveFolder = GameServer.Instance.Worlds.CurrentWorldDirectory + "Users" + GameServer.sepChar + Name + GameServer.sepChar;
         }
 
         public Standing GetStandings(string user) {
@@ -121,57 +144,88 @@ namespace WarWorldInfServer
             return Standing.Nuetral;
         }
 
-        public bool CanCreateStructure(Vector2Int location, out LibNoise.SerializationStructs.MessageTypes reason) {
+        public void SendCommand(lib.Vector2Int location, string command) {
+            if (ownedOutposts.ContainsKey(location)) {
+                ownedOutposts[location].CallCommand(command, "");
+            }
+            else
+                Logger.LogError("No structure at " + location);
+        }
+
+        public bool CanCreateStructure(lib.Vector2Int location, out lib.MessageTypes reason) {
             if (!GameServer.Instance.Structures.CanCreateStructure(location)) {
-                reason = LibNoise.SerializationStructs.MessageTypes.Invalid_Structure_Location;
+                reason = lib.MessageTypes.Invalid_Structure_Location;
                 return false;
             }
 
             // has resources?
-            reason = LibNoise.SerializationStructs.MessageTypes.None;
+            reason = lib.MessageTypes.None;
             return true;
         }
 
-        public void CreateStructure(Vector2Int location, Structure.StructureType type) {
+        public bool CanCallCommand(string command) {
+            if (GameServer.Instance.CommandExec.CommandExists(command)) {
+                CommandDescription desc = GameServer.Instance.CommandExec.GetCommandDescription(command);
+                switch (Permission) {
+                    case PermissionLevel.Server:
+                        return true;
+                    case PermissionLevel.Admin:
+                        return (desc.permission == PermissionLevel.Admin || 
+                                desc.permission == PermissionLevel.Moderator || 
+                                desc.permission == PermissionLevel.User);
+                    case PermissionLevel.Moderator:
+                        return (desc.permission == PermissionLevel.Moderator || 
+                                desc.permission == PermissionLevel.User);
+                    case PermissionLevel.User:
+                        return desc.permission == PermissionLevel.User;
+                    default:
+                        return false;
+                }
+            }
+            return false;
+        }
+
+        public Structure CreateStructure(lib.Vector2Int location, Structures.Structure.StructureType type, bool updateImmediately) {
             Structure str = NewStructure(location, type);
             if (str != null) {
                 if (!ownedOutposts.ContainsKey(str.Location))
                     ownedOutposts.Add(str.Location, str);
-                GameServer.Instance.Structures.AddStructure(str);
+                GameServer.Instance.Structures.AddStructure(str, updateImmediately);
             }
+            return str;
         }
 
-        public bool CanUpgradeStructure(Vector2Int location, Structure.StructureType newType, out LibNoise.SerializationStructs.MessageTypes reason) {
+        public bool CanUpgradeStructure(lib.Vector2Int location, Structures.Structure.StructureType newType, out lib.MessageTypes reason) {
             if (!ownedOutposts.ContainsKey(location)) {
-                reason = LibNoise.SerializationStructs.MessageTypes.No_OP;
+                reason = lib.MessageTypes.No_OP;
                 return false;
             }
             Structure structure = ownedOutposts[location];
 
             if (structure.Type != Structure.StructureType.Outpost) {
-                reason = LibNoise.SerializationStructs.MessageTypes.Op_Not_Upgradable;
+                reason = lib.MessageTypes.Op_Not_Upgradable;
                 return false;
             }
 
             //check resources
             bool hasResources = true;
             if (!hasResources) {
-                reason = LibNoise.SerializationStructs.MessageTypes.Not_Enough_Resources;
+                reason = lib.MessageTypes.Not_Enough_Resources;
                 return false;
             }
 
             //check age
             bool validAge = true;
-            if (validAge) {
-                reason = LibNoise.SerializationStructs.MessageTypes.Invalid_Op_Age;
+            if (!validAge) {
+                reason = lib.MessageTypes.Invalid_Op_Age;
                 return false;
             }
 
-            reason = LibNoise.SerializationStructs.MessageTypes.Success;
-            return false;
+            reason = lib.MessageTypes.Success;
+            return true;
         }
 
-        public void changeStructure(Vector2Int location, Structure.StructureType newType) {
+        public void changeStructure(lib.Vector2Int location, Structures.Structure.StructureType newType) {
             if (ownedOutposts.ContainsKey(location)) {
                 Structure str = NewStructure(location, newType);
                 ownedOutposts[location] = str;
@@ -179,22 +233,20 @@ namespace WarWorldInfServer
             }
         }
 
-        public Structure NewStructure(Vector2Int location, Structure.StructureType type) {
+        public Structure NewStructure(lib.Vector2Int location, Structures.Structure.StructureType type) {
             Structure str = null;
-            if (type != Structure.StructureType.None) {
-                switch (type) {
-                    case Structure.StructureType.City:
-                        str = new City(location, Name);
-                        break;
+            switch (type) {
+                case Structure.StructureType.City:
+                    str = new City(location, this);
+                    break;
 
-                    case Structure.StructureType.Outpost:
-                        str = new Outpost(location, Name);
-                        break;
+                case Structure.StructureType.Outpost:
+                    str = new Outpost(location, this);
+                    break;
 
-                    case Structure.StructureType.Radar:
-                        str = new Radar(location, Name, AppSettings.BaseRadarRadius);
-                        break;
-                }
+                case Structure.StructureType.Radar:
+                    str = new Radar(location, this, AppSettings.BaseRadarRadius);
+                    break;
             }
             return str;
         }
@@ -215,7 +267,7 @@ namespace WarWorldInfServer
             return visibleOutposts.Values.ToArray();
         }
 
-        public Structure[] GetVisibleOps(Vector2Int topLeft, Vector2Int bottomRight, bool onlychanged) {
+        public Structure[] GetVisibleOps(lib.Vector2Int topLeft, lib.Vector2Int bottomRight, bool onlychanged) {
             SetVisibleOps();
             Structure[] visible = GetOps(topLeft, bottomRight, visibleOutposts);
             List<Structure> visibleChanged = new List<Structure>();
@@ -247,7 +299,7 @@ namespace WarWorldInfServer
             return ownedChanged.ToArray();
         }
         
-        public Structure[] GetOwnedOps(Vector2Int topLeft, Vector2Int bottomRight, bool onlyChanged) {
+        public Structure[] GetOwnedOps(lib.Vector2Int topLeft, lib.Vector2Int bottomRight, bool onlyChanged) {
             Structure[] owned = GetOps(topLeft, bottomRight, ownedOutposts);
             List <Structure> ownedChanged = new List<Structure>();
             if (onlyChanged) {
@@ -263,9 +315,9 @@ namespace WarWorldInfServer
             return ownedChanged.ToArray();
         }
 
-        public Structure[] GetOps(Vector2Int topLeft, Vector2Int bottomRight, Dictionary<Vector2Int, Structure> dict) {
+        public Structure[] GetOps(lib.Vector2Int topLeft, lib.Vector2Int bottomRight, Dictionary<lib.Vector2Int, Structure> dict) {
             List<Structure> result = new List<Structure>();
-            foreach (Vector2Int position in dict.Keys) {
+            foreach (lib.Vector2Int position in dict.Keys) {
                 if (position.x >= topLeft.x && position.x <= bottomRight.x &&
                     position.y <= topLeft.y && position.y >= bottomRight.y) {
                     result.Add(dict[position]);
@@ -274,23 +326,50 @@ namespace WarWorldInfServer
             return result.ToArray();
         }
 
-        public SaveVersions.Version_Current.User GetSerializer(){
+        public SaveVersions.Version_Current.User Save(){
 			SaveVersions.Version_Current.User user = new SaveVersions.Version_Current.User ();
 			user.name = Name;
 			user.permission = Permission;
 			return user;
 		}
 
-		public void Deserialize(SaveVersions.Version_Current.User user){
+		public void Load(SaveVersions.Version_Current.User user){
 			Name = user.name;
-            string permissionStr = GameServer.Instance.DB.GetPermission(Name);
-            Permission = (PermissionLevel)Enum.Parse(typeof(PermissionLevel), permissionStr, true);
+            if (user.permission != PermissionLevel.Server) {
+                string permissionStr = GameServer.Instance.DB.GetPermission(Name);
+                Permission = (PermissionLevel)Enum.Parse(typeof(PermissionLevel), permissionStr, true);
+            }
+            else
+                Permission = PermissionLevel.Server;
             SetFolderName();
-            // TODO: load users.
-
+            LoadStructures();
         }
 
-		public void ResetTimer(){
+        public void LoadStructures() {
+            if (GameServer.Instance.WorldLoaded) {
+                string file = SaveFolder + "structures.json";
+                if (File.Exists(file)) {
+                    Structure.StructureSave[] saves = FileManager.LoadObject<Structure.StructureSave[]>(file, true);
+                    for (int i = 0; i < saves.Length; i++) {
+                        Structure str = CreateStructure(saves[i].location, saves[i].type, true);
+                        if (str != null)
+                            str.Load(saves[i]);
+                        else
+                            Logger.Log("Failed to load structure.");
+                    }
+                }
+            }
+        }
+
+        public void SaveStructures() {
+            List<Structure.StructureSave> saves = new List<Structure.StructureSave>();
+            foreach (Structure op in ownedOutposts.Values) {
+                saves.Add(op.Save());
+            }
+            FileManager.SaveConfigFile(SaveFolder + "structures.json", saves.ToArray(), true);
+        }
+
+        public void ResetTimer(){
 			TimeSinceInteraction.Reset ();
 			TimeSinceInteraction.Start ();
 		}

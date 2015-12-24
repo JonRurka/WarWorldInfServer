@@ -3,49 +3,65 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using LibNoise;
+using WarWorldInfinity.Shared;
 
-namespace WarWorldInfServer.Structures {
+namespace WarWorldInfinity.Structures {
     public class StructureControl {
         private Dictionary<Vector2Int, Structure> _structures;
         private Dictionary<Vector2Int, Structure> _changedLastTick;
         private Dictionary<Vector2Int, Structure> _changedThisTick;
+        private Dictionary<string, List<string>> _structureCommands;
 
         public StructureControl() {
             _structures = new Dictionary<Vector2Int, Structure>();
             _changedLastTick = new Dictionary<Vector2Int, Structure>();
             _changedThisTick = new Dictionary<Vector2Int, Structure>();
+            _structureCommands = new Dictionary<string, List<string>>();
+            _structureCommands.Add(Structure.StructureType.None.ToString(), new List<string>());
+            _structureCommands.Add(Structure.StructureType.Outpost.ToString(), new List<string>());
+            _structureCommands.Add(Structure.StructureType.City.ToString(), new List<string>());
+            _structureCommands.Add(Structure.StructureType.Radar.ToString(), new List<string>());
+
+            _structureCommands[Structure.StructureType.Outpost.ToString()].Add("Test");
         }
 
         public void TickUpdate() {
             _changedLastTick.Clear();
             foreach (Structure op in new List<Structure>(_changedThisTick.Values)) {
                 _changedLastTick.Add(op.Location, op);
-                _structures.Add(op.Location, op);
             }
             _changedThisTick.Clear();
             foreach (Structure op in new List<Structure>(_structures.Values)) {
-                op.OnTickUpdate();
+                op.TickUpdate();
             }
         }
 
-        public void AddStructure(Structure OP) {
+        public void AddStructure(Structure OP, bool updateImmediately) {
             if (!OpExists(OP.Location)) {
-                //_structures.Add(OP.Location, OP);
+                _structures.Add(OP.Location, OP);
                 if (!_changedThisTick.ContainsKey(OP.Location))
                     _changedThisTick.Add(OP.Location, OP);
+                else {
+                    _changedThisTick[OP.Location] = OP;
+                }
             }
         }
 
         public void SetStructure(Structure OP) {
             if (OpExists(OP.Location)) {
-                _changedThisTick.Add(OP.Location, OP);
+                _structures[OP.Location] = OP;
+                if (!_changedThisTick.ContainsKey(OP.Location))
+                    _changedThisTick.Add(OP.Location, OP);
+                else {
+                    _changedThisTick[OP.Location] = OP;
+                }
+                Logger.Log("structure upgraded to " + OP.Type);
             }
         }
 
         public void RemoveOutpost(Vector2Int position) {
             if (OpExists(position)) {
-                _structures[position].OnDestroyed();
+                _structures[position].Destroyed();
                 _structures.Remove(position);
                 if (_changedLastTick.ContainsKey(position))
                     _changedLastTick.Remove(position);
@@ -100,6 +116,12 @@ namespace WarWorldInfServer.Structures {
 
         public Structure[] GetStructures() {
             return _structures.Values.ToArray();
+        }
+
+        public Structure GetStructure(Vector2Int location) {
+            if (_structures.ContainsKey(location))
+                return _structures[location];
+            return null;
         }
 
         public Vector2Int[] GetLastTickStructureLocations(Vector2Int topLeft, Vector2Int bottomRight) {
@@ -162,7 +184,15 @@ namespace WarWorldInfServer.Structures {
             return _changedThisTick.Values.ToArray();
         }
 
-        public bool ChangedLastTick(Vector2Int location) {
+        public CommandList[] GetCommands() {
+            List<CommandList> commands = new List<CommandList>();
+            foreach(string type in _structureCommands.Keys) {
+                commands.Add(new CommandList(type, _structureCommands[type].ToArray()));
+            }
+            return commands.ToArray();
+        }
+
+       public bool ChangedLastTick(Vector2Int location) {
             return _changedLastTick.ContainsKey(location);
         }
 

@@ -2,11 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
-using LibNoise;
-using LibNoise.Models;
-using LibNoise.Modifiers;
+using WarWorldInfinity.LibNoise;
 
-namespace WarWorldInfServer
+namespace WarWorldInfinity
 {
 	public class TerrainBuilder
 	{
@@ -36,7 +34,7 @@ namespace WarWorldInfServer
 		public int Height { get; private set; }
 		public IModule NoiseModule { get; private set; }
 		public Noise2D NoiseMap { get; private set; }
-		public System.Drawing.Color[] ColorMap { get; private set; }
+		public Color[] ColorMap { get; private set; }
 		public TerrainSettings Settings { get; private set;}
 		public List<GradientPresets.GradientKeyData> GradientPreset { get; private set;}
 		public Gradient Gradient { get; private set; }
@@ -49,6 +47,7 @@ namespace WarWorldInfServer
 			Height = height;
 			_presetLoader = new GradiantPresetLoader (GameServer.Instance.AppDirectory + "GradientPresets" + GameServer.sepChar);
 			Settings = new TerrainSettings (width, height, seed, string.Empty, string.Empty, string.Empty);
+            Logger.Log("Terrain initialized.");
 		}
 
 		// use when loading
@@ -57,7 +56,7 @@ namespace WarWorldInfServer
 			Seed = settings.seed;
 			Width = settings.width;
 			Height = settings.height;
-			NoiseModule = FileManager.LoadObject<IModule> (settings.moduleFile, true);;
+			NoiseModule = FileManager.LoadObject<IModule> (settings.moduleFile, true);
 			_presetLoader = new GradiantPresetLoader (GameServer.Instance.AppDirectory + "GradientPresets" + GameServer.sepChar);
 			GradientPreset = _presetLoader.GetPreset (settings.preset);
 			Gradient = GradientCreator.CreateGradientServer (new List<GradientPresets.GradientKeyData>(GradientPreset));
@@ -123,7 +122,7 @@ namespace WarWorldInfServer
 			img.Dispose ();
 		}
 
-		public System.Drawing.Color GetColor(int x, int y){
+		public Color GetColor(int x, int y){
 			return ColorMap [x + y * Width];
 		}
 
@@ -131,7 +130,7 @@ namespace WarWorldInfServer
 			return GetBitmap (ColorMap);
 		}
 
-		public Bitmap GetBitmap(System.Drawing.Color[] colors){
+		public Bitmap GetBitmap(Color[] colors){
 			Bitmap map = new Bitmap (Width, Height);
 			for (int x = 0; x < Width; x++) {
 				for (int y = 0; y < Height; y++) {
@@ -141,7 +140,7 @@ namespace WarWorldInfServer
 			return map;
 		}
 
-		private string GetColorString(System.Drawing.Color[] colors){
+		private string GetColorString(Color[] colors){
 			string colorStr = string.Empty;
 			for (int i = 0; i < ColorMap.Length; i++) {
 				colorStr += colors[i].R + "," + colors[i].G + "," + colors[i].B + "&";
@@ -155,7 +154,7 @@ namespace WarWorldInfServer
 			stream.Close ();
 		}
 		
-		private System.Drawing.Color[] GetColorsFromString(string colorStr)
+		private Color[] GetColorsFromString(string colorStr)
 		{
 			string[] colors = colorStr.Split('&');
             System.Drawing.Color[] colorArr = new System.Drawing.Color[colors.Length];
@@ -173,7 +172,7 @@ namespace WarWorldInfServer
 			return colorArr;
 		}
 		
-		private void SaveBmp(System.Drawing.Color[] colors, string file){
+		private void SaveBmp(Color[] colors, string file){
 			Bitmap map = GetBitmap (colors);
 			map.Save(file);
 			map.Dispose();

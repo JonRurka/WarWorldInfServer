@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using Newtonsoft.Json;
 
-namespace WarWorldInfServer
+namespace WarWorldInfinity
 {
 	public static class FileManager
 	{

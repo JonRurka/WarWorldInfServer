@@ -4,14 +4,14 @@ using System.Text;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
-using System.Drawing;
-using LibNoise;
+using WarWorldInfinity.Shared;
+using WarWorldInfinity.LibNoise;
 
-namespace WarWorldInfServer
+namespace WarWorldInfinity
 {
 	public class CommandExecuter
 	{
-		public delegate object CommandFunction(params string[] args);
+		public delegate object CommandFunction(User caller, params string[] args);
 
 		private Dictionary<string, CommandFunction> _cmdTable = new Dictionary<string, CommandFunction>();
 		private Dictionary<string, CommandDescription> _cmdDescription = new Dictionary<string, CommandDescription>();
@@ -38,7 +38,7 @@ namespace WarWorldInfServer
 					else if (key.Key == ConsoleKey.Enter){
 						string tmpStr = _input;
 						_input = string.Empty;
-						TaskQueue.QueueMain(()=>ExecuteCommand(tmpStr));
+						TaskQueue.QueueMain(()=>ExecuteCommand( "_server_",tmpStr));
 					}
 					else{
 						_input += key.KeyChar;
@@ -76,41 +76,57 @@ namespace WarWorldInfServer
 			return commands;
 		}
 
-		private void ExecuteCommand(string command){
-			try {
+		public string ExecuteCommand(string player, string command){
+            string result = string.Empty;
+            try {
 				Logger.Print ("> {0}", command);
 				command = command.Trim ();
 				if (!string.IsNullOrEmpty (command)) {
 					string[] args = command.Split (new[]{' '}, System.StringSplitOptions.RemoveEmptyEntries);
 					string cmd = args [0].ToLower ();
-					if (_cmdTable.ContainsKey (cmd)) {
-						string result = _cmdTable [cmd] (args).ToString ();
-						if (result != string.Empty)
-							Logger.Print (result);
-					} else
-						Logger.LogError ("Command not found: {0}", args [0]);
+                    User user = _server.Users.GetUser(player);
+                    if (_cmdTable.ContainsKey(cmd)) {
+                        result = _cmdTable[cmd](user, args).ToString();
+                        if (result != string.Empty)
+                            Logger.Print(result);
+                    }
+                    else {
+                        Logger.LogError("Command not found: {0}", args[0]);
+                        result = "Command not found: " + args[0];
+                    }
 				}
 			}
 			catch (Exception e){
 				Logger.LogError("{0}\n{1}", e.Message, e.StackTrace);
+                result = "error: " + e.Message;
 			}
+            return result;
 		}
+
+        public bool CommandExists(string command) {
+            return _cmdDescription.ContainsKey(command);
+        }
+
+        public CommandDescription GetCommandDescription(string command) {
+            if (CommandExists(command))
+                return _cmdDescription[command];
+            return default(CommandDescription);
+        }
 
 		// command functions
 
-		private object Runtime_CMD(params string[] args){
+		private object Runtime_CMD(User caller, params string[] args){
 			if (_server.WorldLoaded)
 				return _server.GameTime.GetRuntime();
 			Logger.LogWarning ("World not loaded.");
 			return string.Empty;
 		}
 
-		private object Time_CMD(params string[] args){
-			Logger.Log (GameTimer.GetDateTime ());
-			return string.Empty;
+		private object Time_CMD(User caller, params string[] args){
+			return GameTimer.GetDateTime();
 		}
 
-		private object Create_CMD(params string[] args){
+		private object Create_CMD(User caller, params string[] args){
 			try {
 				if (args.Length == 2){
 					TaskQueue.QeueAsync("GeneralWorker", ()=> _server.Worlds.CreateWorld(args[1]));
@@ -122,19 +138,19 @@ namespace WarWorldInfServer
 			return string.Empty;
 		}
 
-		private object Load_CMD(params string[] args){
+		private object Load_CMD(User caller, params string[] args){
 			try {
 				if (args.Length == 2){
 					_server.Worlds.LoadWorld(args[1]);
 				}
 			}
 			catch(Exception e){
-				Logger.LogError("{0}: {1}\n{2}", e.InnerException.GetType(), e.Message, e.StackTrace);
+				Logger.LogError("{0}: {1}\n{2}", e.GetType().ToString(), e.Message, e.StackTrace);
 			}
 			return string.Empty;
 		}
 
-		private object Save_CMD(params string[] args){
+		private object Save_CMD(User caller, params string[] args){
 			if (args.Length == 1)
 				_server.Save ();
 			else if (args.Length == 2)
@@ -142,41 +158,46 @@ namespace WarWorldInfServer
 			return string.Empty;
 		}
 
-		private object Clear_CMD(params string[] args){
+		private object Clear_CMD(User caller, params string[] args){
 			Logger.Clear ();
 			return string.Empty;
 		}
 
-		private object Exit_CMD(params string[] args){
+		private object Exit_CMD(User caller, params string[] args){
 			if (_server.WorldLoaded)
 				_server.Worlds.SaveCurrentWorld ();
 			_server.Exit ();
-			Logger.Log ("Good bye...");
-			return string.Empty;
+			return "Good bye...";
 		}
 
-		private object Help_CMD(params string[] args){
+		private object Help_CMD(User caller, params string[] args){
 			StringBuilder output = new StringBuilder ();
 			if (args.Length == 1) {
 				output.AppendLine(string.Format("Commands ({0}):", _cmdTable.Count.ToString()));
 				foreach (string key in _cmdTable.Keys) {
-					output.AppendLine (string.Format ("  {0} : {1}", key.PadRight(padAmount, ' '), _cmdDescription [key].description_small));
+                    if (caller.CanCallCommand(key))
+					    output.AppendLine (string.Format ("  {0} : {1}", key.PadRight(padAmount, ' '), _cmdDescription [key].description_small));
 				}
 			} else if (args.Length == 2) {
 				if (_cmdTable.ContainsKey (args [1])) {
-					output.AppendLine(string.Format(" - Command: {0} {1}", _cmdDescription [args [1]].command, _cmdDescription [args [1]].command_args));
-					output.AppendLine(string.Format (" - Short description: {0}", _cmdDescription [args [1]].description_small));
-					if (!string.IsNullOrEmpty(_cmdDescription [args [1]].description_Long))
-						output.AppendLine( string.Format(" - Long description: {0}", _cmdDescription [args [1]].description_Long));
-				} else
-					Logger.LogError ("Command \"{0}\" not found", args [1]);
+                    if (caller.CanCallCommand(args[1])) {
+                        output.AppendLine(string.Format(" - Command: {0} {1}", _cmdDescription[args[1]].command, _cmdDescription[args[1]].command_args));
+                        output.AppendLine(string.Format(" - Short description: {0}", _cmdDescription[args[1]].description_small));
+                        if (!string.IsNullOrEmpty(_cmdDescription[args[1]].description_Long))
+                            output.AppendLine(string.Format(" - Long description: {0}", _cmdDescription[args[1]].description_Long));
+                    }
+                    else
+                        return string.Format("error: {0} permissions required.", _cmdDescription[args[1]].permission.ToString());
+                } else
+                    return "Command not found: " + args[1];
+
 			} else {
-				Logger.LogError("To many arguments.");
+				return "To many arguments.";
 			}
 			return output.ToString();
 		}
 
-		private object Preview_CMD(params string[] args){
+		private object Preview_CMD(User caller, params string[] args){
 			int seed = 0;
 			if (args.Length == 1)
 				seed = AppSettings.TerrainSeed;
@@ -188,9 +209,9 @@ namespace WarWorldInfServer
 			TaskQueue.QeueAsync("terrain preview", ()=>{
 				try {
 					List<GradientPresets.GradientKeyData> keys = new List<GradientPresets.GradientKeyData>();
-                    keys.Add(new GradientPresets.GradientKeyData(new LibNoise.Color(255, 0, 0, 128), 0));
-					keys.Add(new GradientPresets.GradientKeyData(new LibNoise.Color(255, 32, 64, 128), 0.4f));
-					keys.Add(new GradientPresets.GradientKeyData(new LibNoise.Color(255, 64, 96, 191), 0.48f));
+                    keys.Add(new GradientPresets.GradientKeyData(new Color(255, 0, 0, 128), 0));
+					keys.Add(new GradientPresets.GradientKeyData(new Color(255, 32, 64, 128), 0.4f));
+					keys.Add(new GradientPresets.GradientKeyData(new Color(255, 64, 96, 191), 0.48f));
 					keys.Add(new GradientPresets.GradientKeyData(new List<string> {"sand.png"}, 0.5f));
 					keys.Add(new GradientPresets.GradientKeyData(new List<string> {"trees1.png", "trees2.png" }, 0.52f));
 					keys.Add(new GradientPresets.GradientKeyData(new List<string> {"grass1.png", "trees2.png"}, 0.55f));
@@ -226,23 +247,22 @@ namespace WarWorldInfServer
 			return "Seed: " + seed;
 		}
 
-		private object NetUsage_CMD(params string[] args){
+		private object NetUsage_CMD(User caller, params string[] args){
 			_server.Net.DisplayDataRate ();
 			return string.Empty;
 		}
 
-        private object NewUser_CMD(params string[] args) {
+        private object NewUser_CMD(User caller, params string[] args) {
             if (args.Length == 5)
             {
                 string username = args[1];
                 string password = args[2];
                 string permission = args[3];
                 string email = args[4];
-                GameServer.Instance.CreatePlayer(username, password, permission, email);
+                return GameServer.Instance.CreatePlayer(username, password, permission, email);
             }
             else
-                Logger.LogError("Requires 4 arguments.");
-            return string.Empty;
+                return "Requires 4 arguments.";
         }
 	}
 }

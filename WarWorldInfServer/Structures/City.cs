@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using LibNoise;
+using WarWorldInfinity.Shared;
 
-namespace WarWorldInfServer.Structures {
+namespace WarWorldInfinity.Structures {
     public class City : Structure {
-        public City(Vector2Int location, string owner) : base(location, owner, StructureType.City) {
+        public City(Vector2Int location, User owner) : base(location, owner, StructureType.City) {
             
         }
     }

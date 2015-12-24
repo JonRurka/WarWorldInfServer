@@ -6,7 +6,7 @@ using IniParser;
 using IniParser.Parser;
 using IniParser.Model;
 
-namespace WarWorldInfServer
+namespace WarWorldInfinity
 {
 	public static class ConfigParser {
 		public static CommandDescription[] GetCommands(string file) {
@@ -20,6 +20,7 @@ namespace WarWorldInfServer
 					string command_args = string.Empty;
 					string description_small = string.Empty;
 					string description_Long = string.Empty;
+                    User.PermissionLevel permission = User.PermissionLevel.Server;
 					string callback = string.Empty;
 				
 					if (config [command].ContainsKey ("command_args")) {
@@ -36,13 +37,20 @@ namespace WarWorldInfServer
 						description_Long = config [command] ["description_Long"];
 					}
 				
+                    if (config[command].ContainsKey("permission")) {
+                        string permissionStr = config[command]["permission"];
+                        User.PermissionLevel tmpPerm;
+                        if (Enum.TryParse(permissionStr, true, out tmpPerm)) 
+                            permission = tmpPerm;
+                    }
+
 					if (config [command].ContainsKey ("function")) {
 						callback = config [command] ["function"];
 					} else {
 						Logger.LogError ("Failed to parse Command \"" + command + "\": Function not specified.");
 					}
 				
-					commands.Add (new CommandDescription (command, command_args, description_small, description_Long, callback));
+					commands.Add (new CommandDescription (command, command_args, description_small, description_Long, permission, callback));
 				}
 			} else
 				Logger.LogError("Command file not found.");

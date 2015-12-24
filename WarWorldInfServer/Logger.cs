@@ -3,7 +3,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Threading;
 
-namespace WarWorldInfServer
+namespace WarWorldInfinity
 {
 	public static class Logger
 	{

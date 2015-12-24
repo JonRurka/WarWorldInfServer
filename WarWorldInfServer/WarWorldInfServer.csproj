@@ -62,7 +62,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Alliance.cs" />
+    <Compile Include="AllianceManager.cs" />
     <Compile Include="AutoSave.cs" />
+    <Compile Include="ChatProcessor.cs" />
     <Compile Include="ColorConvert.cs" />
     <Compile Include="FrameCounter.cs" />
     <Compile Include="GradientCreator.cs" />
@@ -123,9 +126,9 @@
     <None Include="IniFileParser\Model\IniData.cs.rej" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Libnoise\LibNoise.csproj">
-      <Project>{E5257F41-AED2-4AFA-A998-177DF455DFDA}</Project>
-      <Name>LibNoise</Name>
+    <ProjectReference Include="..\WarWorldInfinity.Shared\WarWorldInfinity.Shared.csproj">
+      <Project>{e5257f41-aed2-4afa-a998-177df455dfda}</Project>
+      <Name>WarWorldInfinity.Shared</Name>
     </ProjectReference>
     <ProjectReference Include="..\WebSocketSharp\WebSocketSharp.csproj">
       <Project>{f19665e0-1afe-4b3f-8851-87dfd9e86caa}</Project>

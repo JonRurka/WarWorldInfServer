@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
-using LibNoise;
+using WarWorldInfinity.LibNoise;
 
-namespace WarWorldInfServer
+namespace WarWorldInfinity
 {
 	public class GradiantPresetLoader
 	{

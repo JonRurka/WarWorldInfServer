@@ -4,13 +4,11 @@ using System.Threading;
 using System.Net;
 using System.Reflection;
 using Newtonsoft.Json;
-using LibNoise;
-using LibNoise.Models;
-using LibNoise.Modifiers;
-using WarWorldInfServer.Networking;
-using WarWorldInfServer.Structures;
+using WarWorldInfinity.LibNoise;
+using WarWorldInfinity.Networking;
+using WarWorldInfinity.Structures;
 
-namespace WarWorldInfServer
+namespace WarWorldInfinity
 {
 	public class GameServer
 	{
@@ -44,7 +42,7 @@ namespace WarWorldInfServer
 		public string[] CommandArgs{ get { return _commandArgs; } }
 		public string AppDirectory { get { return _directory; } }
 		public bool Running { get; private set; }
-		public bool WorldLoaded { get; private set; }
+		public bool WorldLoaded { get; set; }
 		public CommandExecuter CommandExec{ get; private set; }
 		public GameTimer GameTime{ get; private set; }
 		public WorldManager Worlds { get; private set; }
@@ -56,6 +54,7 @@ namespace WarWorldInfServer
         public WebSockServer SockServ { get; private set; }
         public FrameCounter FCounter { get; private set; }
         public StructureControl Structures { get; private set; }
+        public ChatProcessor Chat { get; private set; }
 
 		public GameServer (string[] args)
 		{
@@ -72,32 +71,37 @@ namespace WarWorldInfServer
             Settings = new AppSettings (_directory + "Settings.ini");
 			_taskQueue = new TaskQueue ();
 			CommandExec = new CommandExecuter ();
-            SocketPolicyServer.LoadAll();
+            //SocketPolicyServer.LoadAll();
             SockServ = new WebSockServer(AppSettings.ServerPort);
             _netCommands = new NetworkCommands();
 			DB = new DataBase (AppSettings.DbServer, AppSettings.Database);
 			DB.Connect (AppSettings.DbUsername, AppSettings.DbPassword);
 			Worlds = new WorldManager (this);
             Structures = new StructureControl();
+            Chat = new ChatProcessor();
             Users = new UserManager ();
             autoSaver = new AutoSave();
             FCounter = new FrameCounter();
+            Noise2D.RunAsync += TaskQueue.QeueAsync;
             _tickThread = new Thread (CommandExec.StartCommandLoop);
 			_tickThread.Start ();
 			GameLoop ();
 		}
 
 		public void GameLoop(){
-			//Logger.Log (GetMonoRuntime ());
 			while (Running) {
                 _resetEvent.WaitOne (1);
                 FCounter.Update();
                 try {
-					if (WorldLoaded){
+					if (WorldLoaded && GameTime != null){
+                        Users.Frame();
 						if (GameTime.Update()){ // every second
 							if (GameTime.TickIncrease){ // update when enough seconds pass to increase tick.
 								Logger.Log("Updating world. Tick: {0}", GameTime.Tick.ToString());
-								Save();
+                                Users.TickUpdate();
+                                Structures.TickUpdate();
+                                _taskQueue.Update();
+                                Save();
                                 SockServ.Broadcast("tick", GameTime.Tick.ToString());
 							}
 						}
@@ -107,26 +111,25 @@ namespace WarWorldInfServer
 					Logger.Update(); // print items sent to log during frame.
                 }
 				catch (Exception e){
-					Logger.LogError("{0}: {1}\n{1}", e.InnerException.GetType(), e.Message, e.StackTrace);
+					Logger.LogError("{0}: {1}\n{2}", e.GetType(), e.Message, e.StackTrace);
 				}
 			}
 		}
 
-		public void CreatePlayer(string username, string password, string permission, string email){
+		public string CreatePlayer(string username, string password, string permission, string email){
             User.PermissionLevel level;
-            if (Enum.TryParse<User.PermissionLevel>(permission, true, out level)) {
+            if (Enum.TryParse(permission, true, out level)) {
                 string salt = HashHelper.RandomKey(32);
                 DB.AddNewPlayer(username, HashHelper.HashPasswordFull(password, salt), salt, permission, email);
-                Logger.Log("User {0} created as {1}.", username, permission);
+                return string.Format("User {0} created as {1}.", username, permission);
             }
             else
-                Logger.LogError("Invalid permission level.");
+                return "Invalid permission level.";
 		}
 
 		public void StartWorld(World world){
 			GameTime = new GameTimer (world.WorldStartTime);
             autoSaver.Start(Save, AppSettings.AutoSaveInterval);
-            WorldLoaded = true;
 			Logger.Log ("World \"{0}\" started.", world.WorldName);
 		}
 
@@ -140,7 +143,7 @@ namespace WarWorldInfServer
 
 		public void Exit(){
 			WorldLoaded = false;
-			Net.Close();
+            SockServ.Stop("stopping server...");
 			TaskQueue.Close ();
 			Running = false;
             autoSaver.Stop();

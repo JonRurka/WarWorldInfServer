@@ -5,9 +5,9 @@ VisualStudioVersion = 14.0.23107.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WarWorldInfServer", "WarWorldInfServer\WarWorldInfServer.csproj", "{A1F6F3E1-1E3A-4C59-933B-B8830A38DBF2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibNoise", "Libnoise\LibNoise.csproj", "{E5257F41-AED2-4AFA-A998-177DF455DFDA}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSocketSharp", "WebSocketSharp\WebSocketSharp.csproj", "{F19665E0-1AFE-4B3F-8851-87DFD9E86CAA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WarWorldInfinity.Shared", "WarWorldInfinity.Shared\WarWorldInfinity.Shared.csproj", "{E5257F41-AED2-4AFA-A998-177DF455DFDA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,12 +23,6 @@ Global
 		{A1F6F3E1-1E3A-4C59-933B-B8830A38DBF2}.Release|Any CPU.ActiveCfg = Release|x86
 		{A1F6F3E1-1E3A-4C59-933B-B8830A38DBF2}.Release|x86.ActiveCfg = Release|x86
 		{A1F6F3E1-1E3A-4C59-933B-B8830A38DBF2}.Release|x86.Build.0 = Release|x86
-		{E5257F41-AED2-4AFA-A998-177DF455DFDA}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{E5257F41-AED2-4AFA-A998-177DF455DFDA}.Debug|x86.ActiveCfg = Debug|x86
-		{E5257F41-AED2-4AFA-A998-177DF455DFDA}.Debug|x86.Build.0 = Debug|x86
-		{E5257F41-AED2-4AFA-A998-177DF455DFDA}.Release|Any CPU.ActiveCfg = Release|x86
-		{E5257F41-AED2-4AFA-A998-177DF455DFDA}.Release|x86.ActiveCfg = Release|x86
-		{E5257F41-AED2-4AFA-A998-177DF455DFDA}.Release|x86.Build.0 = Release|x86
 		{F19665E0-1AFE-4B3F-8851-87DFD9E86CAA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F19665E0-1AFE-4B3F-8851-87DFD9E86CAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F19665E0-1AFE-4B3F-8851-87DFD9E86CAA}.Debug|x86.ActiveCfg = Debug|Any CPU
@@ -37,6 +31,12 @@ Global
 		{F19665E0-1AFE-4B3F-8851-87DFD9E86CAA}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F19665E0-1AFE-4B3F-8851-87DFD9E86CAA}.Release|x86.ActiveCfg = Release|Any CPU
 		{F19665E0-1AFE-4B3F-8851-87DFD9E86CAA}.Release|x86.Build.0 = Release|Any CPU
+		{E5257F41-AED2-4AFA-A998-177DF455DFDA}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{E5257F41-AED2-4AFA-A998-177DF455DFDA}.Debug|x86.ActiveCfg = Debug|x86
+		{E5257F41-AED2-4AFA-A998-177DF455DFDA}.Debug|x86.Build.0 = Debug|x86
+		{E5257F41-AED2-4AFA-A998-177DF455DFDA}.Release|Any CPU.ActiveCfg = Release|x86
+		{E5257F41-AED2-4AFA-A998-177DF455DFDA}.Release|x86.ActiveCfg = Release|x86
+		{E5257F41-AED2-4AFA-A998-177DF455DFDA}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

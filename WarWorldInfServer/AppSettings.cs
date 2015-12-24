@@ -7,7 +7,7 @@ using IniParser.Parser;
 using IniParser.Model;
 
 
-namespace WarWorldInfServer
+namespace WarWorldInfinity
 {
 	public class AppSettings
 	{
@@ -20,7 +20,7 @@ namespace WarWorldInfServer
 			public static string WorldSaveFile { get { return "WorldSave.json"; } }
 			public static int AutoSaveInterval { get { return 300; } }
             public static int MinOpDistance { get { return 5; } }
-            public static int BaseRadarRadius { get { return 50; } }
+            public static int BaseRadarRadius { get { return 1000; } }
 
             public static int TerrainWidth { get { return 1920; } }
 			public static int TerrainHeight { get { return 1080; } }

@@ -3,24 +3,24 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using LibNoise;
+using WarWorldInfinity.Shared;
 
-namespace WarWorldInfServer.Structures {
+namespace WarWorldInfinity.Structures {
     class Outpost : Structure {
-        public Outpost(Vector2Int location, string owner) : base(location, owner, StructureType.Outpost) {
+        public Outpost(Vector2Int location, User owner) : base(location, owner, StructureType.Outpost) {
             AddCommand("test", Test_CMD);
         }
 
-        public override void OnDestroyed() {
-            base.OnDestroyed();
+        public override void Destroyed() {
+            base.Destroyed();
         }
 
-        public override void OnTickUpdate() {
-            base.OnTickUpdate();
+        public override void TickUpdate() {
+            base.TickUpdate();
         }
 
         private void Test_CMD(string args) {
-            Logger.Log(args);
+            Logger.Log("It Worked woo!");
         }
     }
 }

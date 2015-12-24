@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>10.0.0</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{E5257F41-AED2-4AFA-A998-177DF455DFDA}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>WarWorldInfinity.shared</RootNamespace>
+    <AssemblyName>WarWorldInfinity.Shared</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <DebugSymbols>True</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>False</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Externalconsole>True</Externalconsole>
+    <PlatformTarget>x86</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <DebugType>none</DebugType>
+    <Optimize>True</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Externalconsole>True</Externalconsole>
+    <PlatformTarget>x86</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Data.Linq" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="Structures\IExtraData.cs" />
+    <Compile Include="Json.cs" />
+    <Compile Include="Libnoise\Billow.cs" />
+    <Compile Include="Libnoise\Checkerboard.cs" />
+    <Compile Include="Libnoise\Constant.cs" />
+    <Compile Include="Libnoise\Cylinders.cs" />
+    <Compile Include="Libnoise\FastBillow.cs" />
+    <Compile Include="Libnoise\FastNoise.cs" />
+    <Compile Include="Libnoise\FastNoiseBasis.cs" />
+    <Compile Include="Libnoise\FastRidgedMultifractal.cs" />
+    <Compile Include="Libnoise\FastTurbulence.cs" />
+    <Compile Include="Libnoise\Gradient.cs" />
+    <Compile Include="Libnoise\GradientAlphaKey.cs" />
+    <Compile Include="Libnoise\GradientKey.cs" />
+    <Compile Include="Libnoise\GradientNoiseBasis.cs" />
+    <Compile Include="Libnoise\GradientPresets.cs" />
+    <Compile Include="Libnoise\IModule.cs" />
+    <Compile Include="Libnoise\Math.cs" />
+    <Compile Include="Libnoise\MazGen.cs" />
+    <Compile Include="Libnoise\Noise2D.cs" />
+    <Compile Include="Libnoise\Perlin.cs" />
+    <Compile Include="Libnoise\RidgedMultifractal.cs" />
+    <Compile Include="Libnoise\Spheres.cs" />
+    <Compile Include="Libnoise\TerrainModule.cs" />
+    <Compile Include="Libnoise\Turbulence.cs" />
+    <Compile Include="Libnoise\Utils.cs" />
+    <Compile Include="Libnoise\ValueNoiseBasis.cs" />
+    <Compile Include="Libnoise\Voronoi.cs" />
+    <Compile Include="Libnoise\Models\Cylinder.cs" />
+    <Compile Include="Libnoise\Models\Line.cs" />
+    <Compile Include="Libnoise\Models\Plane.cs" />
+    <Compile Include="Libnoise\Models\Sphere.cs" />
+    <Compile Include="Libnoise\Modfiers\AbsoluteOutput.cs" />
+    <Compile Include="Libnoise\Modfiers\Add.cs" />
+    <Compile Include="Libnoise\Modfiers\BiasOutput.cs" />
+    <Compile Include="Libnoise\Modfiers\Blend.cs" />
+    <Compile Include="Libnoise\Modfiers\ClampOutput.cs" />
+    <Compile Include="Libnoise\Modfiers\CurveOutput.cs" />
+    <Compile Include="Libnoise\Modfiers\DisplaceInput.cs" />
+    <Compile Include="Libnoise\Modfiers\ExponentialOutput.cs" />
+    <Compile Include="Libnoise\Modfiers\InvertInput.cs" />
+    <Compile Include="Libnoise\Modfiers\InvertOutput.cs" />
+    <Compile Include="Libnoise\Modfiers\LargerOutput.cs" />
+    <Compile Include="Libnoise\Modfiers\Multiply.cs" />
+    <Compile Include="Libnoise\Modfiers\Power.cs" />
+    <Compile Include="Libnoise\Modfiers\RotateInput.cs" />
+    <Compile Include="Libnoise\Modfiers\ScaleBiasOutput.cs" />
+    <Compile Include="Libnoise\Modfiers\ScaleInput.cs" />
+    <Compile Include="Libnoise\Modfiers\ScaleOutput.cs" />
+    <Compile Include="Libnoise\Modfiers\Select.cs" />
+    <Compile Include="Libnoise\Modfiers\SmallerOutput.cs" />
+    <Compile Include="Libnoise\Modfiers\Terrace.cs" />
+    <Compile Include="Libnoise\Modfiers\TranslateInput.cs" />
+    <Compile Include="SerializationStructs.cs" />
+    <Compile Include="Structures.cs" />
+    <Compile Include="Structures\RadarData.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup />
+</Project>
