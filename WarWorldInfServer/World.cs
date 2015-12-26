@@ -13,6 +13,7 @@ namespace WarWorldInfinity
 			public string version;
 			public Time time;
 			public TerrainBuilder.TerrainSettings terrain;
+            public Alliance.AllianceSave[] alliances;
 		}
 
 		public struct Time
@@ -85,6 +86,7 @@ namespace WarWorldInfinity
 				worldSave.version = GameServer.Instance.Version;
 				worldSave.time = WorldStartTime;
 				worldSave.terrain = Terrain.Settings;
+                worldSave.alliances = GameServer.Instance.Alliances.Save();
 				FileManager.SaveConfigFile(WorldDirectory + AppSettings.WorldSaveFile, worldSave, false);
 				GameServer.Instance.Users.Save(WorldDirectory + "Users" + GameServer.sepChar);
 				
@@ -110,6 +112,7 @@ namespace WarWorldInfinity
                 WorldStartTime = worldSave.time;
                 Terrain = new TerrainBuilder(worldSave.terrain);
                 GameServer.Instance.Users.LoadUsers(WorldDirectory + "Users" + GameServer.sepChar);
+                GameServer.Instance.Alliances.Load(worldSave.alliances);
 
                 Logger.Log("World \"{0}\" loaded.", worldName);
                 GameServer.Instance.StartWorld(this);
@@ -130,7 +133,8 @@ namespace WarWorldInfinity
 			worldSave.version = GameServer.Instance.Version;
 			worldSave.time = new Time (timer.TotalSeconds, timer.Minutes, timer.Hours, timer.Days, timer.Tick, timer.SecondsInTick, timer.MaxSecondsInTick );
 			worldSave.terrain = Terrain.Settings;
-			FileManager.SaveConfigFile (WorldDirectory + AppSettings.WorldSaveFile, worldSave, false);
+            worldSave.alliances = GameServer.Instance.Alliances.Save();
+            FileManager.SaveConfigFile (WorldDirectory + AppSettings.WorldSaveFile, worldSave, false);
 
 			if (!File.Exists(WorldDirectory + AppSettings.TerrainImageFile))
 				Terrain.Save (WorldDirectory + AppSettings.TerrainImageFile);

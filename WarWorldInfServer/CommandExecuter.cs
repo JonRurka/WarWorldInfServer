@@ -264,6 +264,12 @@ namespace WarWorldInfinity
             else
                 return "Requires 4 arguments.";
         }
+
+        private object NewAlliance_CMD(User caller, params string[] args) {
+            if (caller.Name == "_server_") {
+                
+            }
+        }
 	}
 }
 
