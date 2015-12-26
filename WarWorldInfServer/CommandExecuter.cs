@@ -264,6 +264,18 @@ namespace WarWorldInfinity
             else
                 return "Requires 4 arguments.";
         }
+
+        private object NewAlliance(User caller, params string[] args){
+            if (caller.Permission == User.PermissionLevel.Server) {
+                if (args.Length == 2) {
+                    GameServer.Instance.A
+                }
+            }
+            else if (caller.Permission == User.PermissionLevel.Admin) {
+                
+            } 
+               
+        }
 	}
 }
 
