@@ -55,6 +55,7 @@ namespace WarWorldInfinity
         public FrameCounter FCounter { get; private set; }
         public StructureControl Structures { get; private set; }
         public ChatProcessor Chat { get; private set; }
+        public AllianceManager Alliances { get; private set; }
 
 		public GameServer (string[] args)
 		{
@@ -82,6 +83,7 @@ namespace WarWorldInfinity
             Users = new UserManager ();
             autoSaver = new AutoSave();
             FCounter = new FrameCounter();
+            Alliances = new AllianceManager();
             Noise2D.RunAsync += TaskQueue.QeueAsync;
             _tickThread = new Thread (CommandExec.StartCommandLoop);
 			_tickThread.Start ();
