@@ -48,7 +48,7 @@ namespace WarWorldInfinity
             callback = _callback;
 		}
 		
-		private static CommandExecuter.CommandFunction GetCallbackFromString(string command, string callback){
+		public static CommandExecuter.CommandFunction GetCallbackFromString(string command, string callback){
 			CommandExecuter.CommandFunction result = null;
 			MethodInfo methodInf = typeof(CommandExecuter).GetMethod (callback, 
 			                                                          BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);

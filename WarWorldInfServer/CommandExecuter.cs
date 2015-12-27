@@ -268,14 +268,29 @@ namespace WarWorldInfinity
         private object NewAlliance(User caller, params string[] args){
             if (caller.Permission == User.PermissionLevel.Server) {
                 if (args.Length == 2) {
-                    GameServer.Instance.A
+                    GameServer.Instance.Alliances.CreateAlliance(args[0], args[1]);
+                    return "Alliance created";
+                }
+                else if (args.Length == 1) {
+                    GameServer.Instance.Alliances.CreateAlliance(args[0], "_server_");
+                    return "Alliance created";
                 }
             }
             else if (caller.Permission == User.PermissionLevel.Admin) {
-                
-            } 
-               
+                if (args.Length == 2)
+                {
+                    GameServer.Instance.Alliances.CreateAlliance(args[0], args[1]);
+                    return "Alliance created";
+                }
+                else if (args.Length == 1)
+                {
+                    GameServer.Instance.Alliances.CreateAlliance(args[0], caller.Name);
+                    return "Alliance created";
+                }
+            }
+            return "Alliance creation failed.";
         }
+
 	}
 }
 

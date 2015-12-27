@@ -16,12 +16,21 @@ namespace WarWorldInfinity {
             
         }
 
-        public void CreateAlliance(string name, User owner) {
+        public bool CreateAlliance(string name, string owner) {
+            if (GameServer.Instance.Users.UserExists(owner)) {
+                return CreateAlliance(name, GameServer.Instance.Users.GetUser(owner));
+            }
+            return false;
+        }
+        
+        public bool CreateAlliance(string name, User owner) {
             // see if can create alliance.
             if (!AllianceExist(name)) {
                 Alliance all = new Alliance(name, owner);
                 _alliances.Add(name, all);
+                return true;
             }
+            return false;
         }
 
         public Alliance GetAlliance(string name) {
