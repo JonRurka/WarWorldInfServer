@@ -52,13 +52,39 @@ namespace WarWorldInfinity
 		}
 
 		public void LoadCommands(){
-			CommandDescription[] commands = ConfigParser.GetCommands (GameServer.Instance.AppDirectory + "Commands.ini");
-			for (int i = 0; i < commands.Length; i++) {
-				RegisterCommand(commands[i]);
-				if (commands[i].command.Length > padAmount)
-					padAmount = commands[i].command.Length;
+            List<CommandDescription> attributeCommands = new List<CommandDescription>(GetAttributeCommands());
+            CommandDescription[] fileCommands = ConfigParser.GetCommands (GameServer.Instance.AppDirectory + "Commands.ini");
+            for (int i = 0; i < fileCommands.Length; i++) {
+                
+            }
+			for (int i = 0; i < attributeCommands.Count; i++) {
+				RegisterCommand(attributeCommands[i]);
+				if (attributeCommands[i].command.Length > padAmount)
+					padAmount = attributeCommands[i].command.Length;
 			}
 		}
+
+        public CommandDescription[] GetAttributeCommands() {
+            List<CommandDescription> commands = new List<CommandDescription>();
+            MethodInfo[] methods = GetType().GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+            for (int i = 0; i < methods.Length; i++) {
+                Command commandAttribute = methods[i].GetCustomAttribute<Command>();
+                if (commandAttribute != null) {
+                    CommandFunction function = null;
+                    if (methods[i].IsStatic)
+                        function = (CommandFunction)Delegate.CreateDelegate(typeof(CommandFunction), methods[i]);
+                    else
+                        function = (CommandFunction)Delegate.CreateDelegate(typeof(CommandFunction), this, methods[i]);
+                    commands.Add(new CommandDescription(commandAttribute.command, 
+                                                        commandAttribute.command_args, 
+                                                        commandAttribute.description_small, 
+                                                        commandAttribute.description_Long, 
+                                                        commandAttribute.permission, 
+                                                        function));
+                }
+            }
+            return commands.ToArray();
+        }
 
 		public void RegisterCommand(CommandDescription command){
 			_cmdTable [command.command.ToLower ()] = command.callback;
