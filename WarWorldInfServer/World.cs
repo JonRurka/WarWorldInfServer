@@ -113,6 +113,7 @@ namespace WarWorldInfinity
                 Terrain = new TerrainBuilder(worldSave.terrain);
                 GameServer.Instance.Users.LoadUsers(WorldDirectory + "Users" + GameServer.sepChar);
                 GameServer.Instance.Alliances.Load(worldSave.alliances);
+                GameServer.Instance.Structures.Load();
 
                 Logger.Log("World \"{0}\" loaded.", worldName);
                 GameServer.Instance.StartWorld(this);

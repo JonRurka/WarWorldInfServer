@@ -11,8 +11,8 @@ namespace WarWorldInfinity.Structures {
             AddCommand("test", Test_CMD);
         }
 
-        public override void Destroyed() {
-            base.Destroyed();
+        public override void Destroy() {
+            base.Destroy();
         }
 
         public override void TickUpdate() {

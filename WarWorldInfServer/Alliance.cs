@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WarWorldInfinity.Shared;
-using WarWorldInfinity.LibNoise;
 
 namespace WarWorldInfinity {
     public class Alliance {
@@ -12,11 +11,13 @@ namespace WarWorldInfinity {
             public string name;
             public string owner;
             public string[] members;
+            public string[] enemies;
 
-            public AllianceSave(string name, string owner, string[] members) {
+            public AllianceSave(string name, string owner, string[] members, string[] enemies) {
                 this.name = name;
                 this.owner = owner;
                 this.members = members;
+                this.enemies = enemies;
             }
         }
 
@@ -30,22 +31,41 @@ namespace WarWorldInfinity {
 
         public string Name { get; set; }
         public User Owner { get; set; }
-        public List<Member> members;
+        public Dictionary<string, Member> members;
         public List<Vector2Int> structures;
+        public Dictionary<string, Alliance> enemies;
 
         public Alliance(string name, User owner) {
             Name = name;
             Owner = owner;
-            members = new List<Member>();
+            members = new Dictionary<string, Member>();
         }
 
         public Alliance(AllianceSave save) {
-            members = new List<Member>();
+            members = new Dictionary<string, Member>();
             Load(save);
         }
 
         public void UpdateTick() {
             
+        }
+
+        public bool HasMember(User user) {
+            return members.ContainsKey(user.Name);
+        }
+
+        public bool HasMember(string user) {
+            return members.ContainsKey(user);
+        }
+
+        public void AddMember(User user) {
+            if (!HasMember(user)) {
+                members.Add(user.Name, new Member(user));
+            }
+        }
+
+        public bool IsEnemy(string alliance) {
+            return enemies.ContainsKey(alliance);
         }
 
         public void Load(AllianceSave save) {
@@ -57,19 +77,15 @@ namespace WarWorldInfinity {
                     if (GameServer.Instance.Users.UserExists(save.members[i])) {
                         User user = GameServer.Instance.Users.GetUser(save.members[i]);
                         user.alliance = this;
-                        members.Add(new Member(user));
+                        members.Add(user.Name, new Member(user));
                     }
                 }
             }
-            
         }
 
         public AllianceSave Save() {
-            List<string> memberNames = new List<string>();
-            for (int i = 0; i < members.Count; i++) {
-                memberNames.Add(members[i].user.Name);
-            }
-            return new AllianceSave(Name, Owner.Name, memberNames.ToArray());
+            List<string> memberNames = new List<string>(members.Keys.ToArray());
+            return new AllianceSave(Name, Owner.Name, memberNames.ToArray(), enemies.Keys.ToArray());
         }
     }
 }

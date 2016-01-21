@@ -8,16 +8,14 @@ namespace WarWorldInfinity
 {
 	public class UserManager
 	{
-		private Dictionary<string, User> _users = new Dictionary<string, User> ();
-		private Dictionary<string, User> _connectedUsers = new Dictionary<string, User>();
-		/* Holds the lists of users.
-		 * 
-		 */ 
-
+		private Dictionary<string, User> _users;
+		private Dictionary<string, User> _connectedUsers;
 
 		public UserManager ()
 		{
-            SaveVersions.Version_Current.User userSave = new SaveVersions.Version_Current.User("_server_", User.PermissionLevel.Server);
+            _users = new Dictionary<string, User>();
+            _connectedUsers = new Dictionary<string, User>();
+            SaveVersions.Version_Current.User userSave = new SaveVersions.Version_Current.User("_server_", User.PermissionLevel.Server, new User.ModeratorAction[0]);
             AddUser(new User(userSave));
         }
 

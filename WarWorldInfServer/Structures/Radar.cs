@@ -5,12 +5,14 @@ using System.Text;
 using System.Threading.Tasks;
 using WarWorldInfinity.Shared;
 using WarWorldInfinity.Shared.Structures;
+using WarWorldInfinity.Units;
 
 namespace WarWorldInfinity.Structures {
     public class Radar : Structure {
 
         public int Radius { get; set; }
         public List<Vector2Int> VisibleStructures { get; private set; }
+        public List<Squad> VisibleUnits { get; private set; }
 
         public Radar(Vector2Int location, User owner, int radius) : base(location, owner, StructureType.Radar) {
             Radius = radius;
@@ -33,12 +35,31 @@ namespace WarWorldInfinity.Structures {
             Radius = ((RadarData)extraData).radius;
         }
 
+        public override void PostLoad() {
+            SetVisibleStructures();
+            SetVisibleUnits();
+        }
+
         public void SetVisibleStructures()
         {
-            Logger.Log("setting visible structures");
             Vector2Int topLeft = new Vector2Int(Location.x - Radius, Location.y + Radius);
             Vector2Int bottomRight = new Vector2Int(Location.x + Radius, Location.y - Radius);
             SetVisibleStructures(topLeft, bottomRight);
+        }
+
+        public void SetVisibleUnits() {
+            Vector2Int topLeft = new Vector2Int(Location.x - Radius, Location.y + Radius);
+            Vector2Int bottomRight = new Vector2Int(Location.x + Radius, Location.y - Radius);
+            SetVisibleUnits(topLeft, bottomRight);
+        }
+
+        public void SetVisibleUnits(Vector2Int topLeft, Vector2Int bottomRight) {
+            Squad[] units = GameServer.Instance.Squads.GetTravelingSquads(topLeft, bottomRight);
+            VisibleUnits.Clear();
+            for (int i = 0; i < units.Length; i++) {
+                if (Vector2Int.Distance(Location, units[i].location) <= Radius)
+                    VisibleUnits.Add(units[i]);
+            }
         }
 
         public void SetVisibleStructures(Vector2Int topLeft, Vector2Int bottomRight) {

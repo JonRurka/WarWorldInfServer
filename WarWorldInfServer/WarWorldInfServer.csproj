@@ -74,6 +74,7 @@
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="Networking\SockPol.cs" />
     <Compile Include="Structures\City.cs" />
+    <Compile Include="Structures\None.cs" />
     <Compile Include="Structures\Outpost.cs" />
     <Compile Include="Structures\Radar.cs" />
     <Compile Include="Structures\Structure.cs" />
@@ -86,6 +87,9 @@
     <Compile Include="Logger.cs" />
     <Compile Include="Networking\WebSockServer.cs" />
     <Compile Include="Structures\RadarUtility.cs" />
+    <Compile Include="Units\AirSquad.cs" />
+    <Compile Include="Units\Squad.cs" />
+    <Compile Include="Units\SquadController.cs" />
     <Compile Include="WorldManager.cs" />
     <Compile Include="World.cs" />
     <Compile Include="FileManager.cs" />

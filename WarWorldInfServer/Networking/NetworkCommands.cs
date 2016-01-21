@@ -20,6 +20,7 @@ namespace WarWorldInfinity.Networking {
             _server.SockServ.AddCommand("changestructure", ChangeStructure_CMD);
             _server.SockServ.AddCommand("structurecommand", StructureCommand_CMD);
             _server.SockServ.AddCommand("inchat", Chat_CMD);
+            _server.SockServ.AddCommand("getstructuresquads", GetSquadsOnStructure_CMD);
         }
 
         private Traffic Echo_CMD(string args) {
@@ -161,6 +162,10 @@ namespace WarWorldInfinity.Networking {
                             structures[i].Location, structures[i].Type.ToString(), structures[i].Owner.Name, "", user.GetStandings(structures[i].Owner).ToString(), structures[i].extraData));
                     }
 
+                    if (!user.HasCity()) {
+                        return new Traffic("createcity", "");
+                    }
+
                     _server.SockServ.Send(user.Name, "setstructurecommands", JsonConvert.SerializeObject(GameServer.Instance.Structures.GetCommands()));
                     return new Traffic("setstructures", JsonConvert.SerializeObject(netStructures.ToArray(), new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All }));
                 }
@@ -227,7 +232,7 @@ namespace WarWorldInfinity.Networking {
             if (_server.WorldLoaded) {
                 if (_server.Users.SessionKeyExists(command.sessionKey)) {
                     User user = _server.Users.GetConnectedUser(command.sessionKey);
-                    user.SendCommand(command.location, command.command);
+                    user.SendCommand(command.location, command.command, command.args);
                     type = MessageTypes.Success;
                 }
                 else
@@ -235,7 +240,42 @@ namespace WarWorldInfinity.Networking {
             }
             else
                 type = MessageTypes.World_Not_Loaded;
+            return new Traffic("message", JsonConvert.SerializeObject(new Message("_server_", type, message)));
+        }
 
+        private Traffic GetSquadsOnStructure_CMD(string args) {
+            StructureCommand command = JsonConvert.DeserializeObject<StructureCommand>(args);
+            MessageTypes type = MessageTypes.None;
+            string message = "";
+
+            if (_server.WorldLoaded) {
+                if (_server.Users.SessionKeyExists(command.sessionKey)) {
+                    User user = _server.Users.GetConnectedUser(command.sessionKey);
+                    if (_server.Structures.OpExists(command.location)) {
+                        Structures.Structure structure = _server.Structures.GetStructure(command.location);
+                        User.Standing standings = structure.Owner.GetStandings(user);
+                        if (standings == User.Standing.Own || standings == User.Standing.Ally) {
+                            Units.Squad[] units = structure.GetSquads();
+                            List<SquadInfo> unitInf = new List<SquadInfo>();
+                            for (int i = 0; i < units.Length; i++) {
+                                unitInf.Add(new SquadInfo(units[i].owner.Name, units[i].name, units[i].ident, 
+                                                         (SquadInfo.SquadStanding)standings, new Vector2Int(), new Vector2Int(), 
+                                                         structure.Location, false));
+                            }
+                            StructureSquads str_unt = new StructureSquads(structure.Location, unitInf.ToArray());
+                            return new Traffic("SetStructureSquads", JsonConvert.SerializeObject(str_unt));
+                        }
+                        else
+                            type = MessageTypes.Invalid_Permission;
+                    }
+                    else
+                        type = MessageTypes.No_OP;
+                }
+                else
+                    type = MessageTypes.Not_Logged_in;
+            }
+            else
+                type = MessageTypes.World_Not_Loaded;
             return new Traffic("message", JsonConvert.SerializeObject(new Message("_server_", type, message)));
         }
 

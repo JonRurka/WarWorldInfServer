@@ -55,10 +55,12 @@ namespace WarWorldInfinity
 			public struct User{
 				public string name;
 				public WarWorldInfinity.User.PermissionLevel permission;
+                public WarWorldInfinity.User.ModeratorAction[] modActions;
 
-                public User(string name, WarWorldInfinity.User.PermissionLevel permission) {
+                public User(string name, WarWorldInfinity.User.PermissionLevel permission, WarWorldInfinity.User.ModeratorAction[] modActions) {
                     this.name = name;
                     this.permission = permission;
+                    this.modActions = modActions;
                 }
 			}
 		}

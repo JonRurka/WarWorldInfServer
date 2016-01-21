@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WarWorldInfinity.Shared;
+using WarWorldInfinity.Units;
 
 namespace WarWorldInfinity.Structures {
     public class StructureControl {
@@ -61,8 +62,12 @@ namespace WarWorldInfinity.Structures {
 
         public void RemoveOutpost(Vector2Int position) {
             if (OpExists(position)) {
-                _structures[position].Destroyed();
+                Squad[] units = _structures[position].Squads.ToArray();
+                User user = _structures[position].Owner;
+                _structures[position].Destroy();
                 _structures.Remove(position);
+                if (units.Length > 0)
+                    user.CreateStructure(position, Structure.StructureType.None, true).SetSquads(units);
                 if (_changedLastTick.ContainsKey(position))
                     _changedLastTick.Remove(position);
                 if (_changedThisTick.ContainsKey(position))
@@ -202,6 +207,12 @@ namespace WarWorldInfinity.Structures {
 
         public bool OpExists(Vector2Int position) {
             return _structures.ContainsKey(position);
+        }
+
+        public void Load() {
+            foreach (Structure str in _structures.Values) {
+                str.PostLoad();
+            }
         }
     }
 }

@@ -52,15 +52,15 @@ namespace WarWorldInfinity
 		}
 
 		public void LoadCommands(){
-            List<CommandDescription> attributeCommands = new List<CommandDescription>(GetAttributeCommands());
+            //List<CommandDescription> attributeCommands = new List<CommandDescription>(GetAttributeCommands());
             CommandDescription[] fileCommands = ConfigParser.GetCommands (GameServer.Instance.AppDirectory + "Commands.ini");
-            for (int i = 0; i < fileCommands.Length; i++) {
+            /*for (int i = 0; i < fileCommands.Length; i++) {
                 
-            }
-			for (int i = 0; i < attributeCommands.Count; i++) {
-				RegisterCommand(attributeCommands[i]);
-				if (attributeCommands[i].command.Length > padAmount)
-					padAmount = attributeCommands[i].command.Length;
+            }*/
+			for (int i = 0; i < fileCommands.Length; i++) {
+				RegisterCommand(fileCommands[i]);
+				if (fileCommands[i].command.Length > padAmount)
+					padAmount = fileCommands[i].command.Length;
 			}
 		}
 
@@ -291,7 +291,7 @@ namespace WarWorldInfinity
                 return "Requires 4 arguments.";
         }
 
-        private object NewAlliance(User caller, params string[] args){
+        private object NewAlliance_CMD(User caller, params string[] args){
             if (caller.Permission == User.PermissionLevel.Server) {
                 if (args.Length == 2) {
                     GameServer.Instance.Alliances.CreateAlliance(args[0], args[1]);
@@ -317,6 +317,51 @@ namespace WarWorldInfinity
             return "Alliance creation failed.";
         }
 
-	}
+        private object NewStructure_CMD(User caller, params string[] args) {
+            if (caller.Permission == User.PermissionLevel.Admin || caller.Permission == User.PermissionLevel.Server)
+            {
+                if (args.Length == 3) {
+                    int x;
+                    int y;
+                    Structures.Structure.StructureType type;
+                    if (int.TryParse(args[0], out x) && int.TryParse(args[1], out y) && Enum.TryParse(args[2], out type)) {
+                        caller.CreateStructure(new Vector2Int(x, y), type, true);
+                        return "Structure created.";
+                    }
+                }
+                else
+                    return "Error: command requires 3 arguements.";
+            }
+            return "Invalid permission level.";
+        }
+
+        private object Kick_CMD(User caller, params string[] args) {
+            if (caller.Permission == User.PermissionLevel.Moderator ||
+                caller.Permission == User.PermissionLevel.Admin ||
+                caller.Permission == User.PermissionLevel.Server) {
+
+                
+            }
+            return "Not implemented.";
+        }
+
+        private object Mute_CMD(User caller, params string[] args) {
+            if (caller.Permission == User.PermissionLevel.Moderator ||
+                caller.Permission == User.PermissionLevel.Admin ||
+                caller.Permission == User.PermissionLevel.Server) {
+                // moderators must specify time arg.
+            }
+            return "Not implemented.";
+        }
+
+        private object Ban_CMD(User caller, params string[] args) {
+            if (caller.Permission == User.PermissionLevel.Moderator ||
+                caller.Permission == User.PermissionLevel.Admin ||
+                caller.Permission == User.PermissionLevel.Server) {
+                // moderators must specify time arg.
+            }
+            return "Not implemented.";
+        }
+    }
 }
 

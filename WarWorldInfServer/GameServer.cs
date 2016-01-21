@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Net;
@@ -7,9 +8,13 @@ using Newtonsoft.Json;
 using WarWorldInfinity.LibNoise;
 using WarWorldInfinity.Networking;
 using WarWorldInfinity.Structures;
+using WarWorldInfinity.Units;
 
 namespace WarWorldInfinity
 {
+/// <summary>
+/// 
+/// </summary>
 	public class GameServer
 	{
 		private readonly string[] _commandArgs;
@@ -56,6 +61,7 @@ namespace WarWorldInfinity
         public StructureControl Structures { get; private set; }
         public ChatProcessor Chat { get; private set; }
         public AllianceManager Alliances { get; private set; }
+        public SquadController Squads { get; private set; }
 
 		public GameServer (string[] args)
 		{
@@ -67,6 +73,9 @@ namespace WarWorldInfinity
 			_resetEvent = new ManualResetEvent(false);
 		}
 
+        /// <summary>
+        /// Start server.
+        /// </summary>
 		public void Run(){
             Logger.Log("War World Infinity Server Version {0}", Version);
             Settings = new AppSettings (_directory + "Settings.ini");
@@ -84,12 +93,16 @@ namespace WarWorldInfinity
             autoSaver = new AutoSave();
             FCounter = new FrameCounter();
             Alliances = new AllianceManager();
+            Squads = new SquadController();
             Noise2D.RunAsync += TaskQueue.QeueAsync;
             _tickThread = new Thread (CommandExec.StartCommandLoop);
 			_tickThread.Start ();
 			GameLoop ();
 		}
 
+        /// <summary>
+        /// Primary game loop.
+        /// </summary>
 		public void GameLoop(){
 			while (Running) {
                 _resetEvent.WaitOne (1);
@@ -118,6 +131,14 @@ namespace WarWorldInfinity
 			}
 		}
 
+        /// <summary>
+        /// Creates and adds new player to the database.
+        /// </summary>
+        /// <param name="username">name of player</param>
+        /// <param name="password">password used to login</param>
+        /// <param name="permission">player permission level</param>
+        /// <param name="email">email address. (not used at the moment)</param>
+        /// <returns></returns>
 		public string CreatePlayer(string username, string password, string permission, string email){
             User.PermissionLevel level;
             if (Enum.TryParse(permission, true, out level)) {
@@ -129,20 +150,34 @@ namespace WarWorldInfinity
                 return "Invalid permission level.";
 		}
 
+        /// <summary>
+        /// Start loaded world.
+        /// </summary>
+        /// <param name="world">world to start</param>
 		public void StartWorld(World world){
 			GameTime = new GameTimer (world.WorldStartTime);
             autoSaver.Start(Save, AppSettings.AutoSaveInterval);
 			Logger.Log ("World \"{0}\" started.", world.WorldName);
 		}
 
+        /// <summary>
+        /// Save current world.
+        /// </summary>
 		public void Save(){
 			Save (Worlds.CurrentWorld.WorldName);
 		}
 
+        /// <summary>
+        /// Save world under new name.
+        /// </summary>
+        /// <param name="world">name of world save</param>
 		public void Save(string world){
 			Worlds.SaveWorld (world);
 		}
 
+        /// <summary>
+        /// Save and exit server.
+        /// </summary>
 		public void Exit(){
 			WorldLoaded = false;
             SockServ.Stop("stopping server...");
@@ -151,11 +186,6 @@ namespace WarWorldInfinity
             autoSaver.Stop();
             _tickThread.Abort ();
 		}
-
-        private bool IsMonoRuntime()
-        {
-            return (Type.GetType("Mono.Runtime") != null);
-        }
 	}
 }
 

@@ -63,6 +63,12 @@ namespace WarWorldInfinity.Shared {
             return (int)Math.Abs(Math.Sqrt((deltaX * deltaX) + (deltaY * deltaY)));
         }
 
+        public static Vector2Int Interpolate(Vector2Int first, Vector2Int second, float alpha) {
+            int x = (int)(alpha * second.x + (1 - alpha) * first.x);
+            int y = (int)(alpha * second.y + (1 - alpha) * first.y);
+            return new Vector2Int(x, y);
+        }
+
         public override bool Equals(object obj) {
             if (obj is Vector2Int)
                 return Equals((Vector2Int)obj);

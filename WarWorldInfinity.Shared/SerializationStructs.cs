@@ -43,6 +43,37 @@ namespace WarWorldInfinity.Shared {
         }*/
     }
 
+    public struct SquadInfo {
+        public enum SquadStanding {
+            None,
+            Own,
+            Ally,
+            Nuetral,
+            Enemy,
+        }
+        public string owner;
+        public string name;
+        public string ident;
+        public SquadStanding standings;
+        public Vector2Int source;
+        public Vector2Int destination;
+        public Vector2Int location;
+        public bool isTraveling;
+
+        // Unit Details.
+
+        public SquadInfo(string owner, string name, string ident, SquadStanding standings, Vector2Int source, Vector2Int destination, Vector2Int location, bool isTraveling) {
+            this.owner = owner;
+            this.name = name;
+            this.ident = ident;
+            this.standings = standings;
+            this.source = source;
+            this.destination = destination;
+            this.location = location;
+            this.isTraveling = isTraveling;
+        }
+    }
+
     public struct Traffic {
         public string command;
         public string data;
@@ -106,6 +137,7 @@ namespace WarWorldInfinity.Shared {
         No_OP,
         Op_Not_Upgradable,
         Not_Enough_Resources,
+        Invalid_Permission
     }
 
     // Structs sent to server from client
@@ -175,11 +207,13 @@ namespace WarWorldInfinity.Shared {
         public string sessionKey;
         public Vector2Int location;
         public string command;
+        public string args;
 
-        public StructureCommand(string sessionKey, Vector2Int location, string command) {
+        public StructureCommand(string sessionKey, Vector2Int location, string command, string args) {
             this.sessionKey = sessionKey;
             this.location = location;
             this.command = command;
+            this.args = args;
         }
 
         public override string ToString() {
@@ -189,7 +223,6 @@ namespace WarWorldInfinity.Shared {
     }
 
     // Structs sent to client from server.
-
 
     public struct LoginResponse {
         public ResponseType response;
@@ -209,6 +242,16 @@ namespace WarWorldInfinity.Shared {
         /*public LoginResponse(string jsonStr) {
             
         }*/
+    }
+
+    public struct StructureSquads {
+        public Vector2Int location;
+        public SquadInfo[] squads;
+
+        public StructureSquads(Vector2Int location, SquadInfo[] squads) {
+            this.location = location;
+            this.squads = squads;
+        }
     }
 
     // Basic map data sent to client after login.
